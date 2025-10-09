@@ -12,34 +12,53 @@ st.set_page_config(
 # -------------------- CUSTOM CSS --------------------
 st.markdown("""
 <style>
-/* ----------------- Adaptive UI ----------------- */
-
-/* General text */
-h1, h2, h3, h4, h5, h6, p, span, div {
-  color: #111 !important;
+/* ----------------- Global Styles ----------------- */
+body, .stApp, .stSidebar {
+    font-family: 'Segoe UI', sans-serif;
 }
 
-/* Metric values */
-div[data-testid="stMetricValue"] {
-  color: #0a0a0a !important;
+/* Gradient Title */
+.title-gradient {
+    background: linear-gradient(90deg, #2563eb, #6b21a8);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-size: 40px;
+    font-weight: 700;
 }
 
-/* Buttons */
-button[kind="primary"] {
-  background-color: #2563eb !important;
-  color: white !important;
-  border-radius: 8px !important;
+/* Subtitle */
+.subtitle {
+    font-size: 18px;
+    color: #555;
+    margin-bottom: 20px;
 }
 
-/* ----------------- Case Cards ----------------- */
+/* Metric Cards */
+.metric-card {
+    background-color: #ffffff;
+    border-radius: 15px;
+    padding: 20px;
+    text-align: center;
+    box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+    transition: transform 0.2s;
+}
+.metric-card:hover {
+    transform: translateY(-5px);
+}
+
+/* Prioritized Case Cards */
 .case-card {
-  padding: 10px;
-  margin-bottom: 8px;
-  border-radius: 10px;
-  box-shadow: 0px 2px 5px rgba(0,0,0,0.1);
-  border-left: 5px solid;
-  color: #111 !important;
-  background-color: #ffffff;
+    padding: 15px;
+    margin-bottom: 12px;
+    border-radius: 12px;
+    box-shadow: 0px 4px 12px rgba(0,0,0,0.1);
+    border-left: 6px solid;
+    background-color: #ffffff;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+.case-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0px 8px 18px rgba(0,0,0,0.15);
 }
 
 /* Urgency colors */
@@ -47,37 +66,49 @@ button[kind="primary"] {
 .medium {border-left-color:#f59e0b;}
 .low {border-left-color:#10b981;}
 
-/* ----------------- Dark Mode Support ----------------- */
+/* Deadline Progress Bar */
+.progress-bar {
+    height: 6px;
+    border-radius: 3px;
+    background-color: #e0e0e0;
+    margin-top: 8px;
+    margin-bottom: 5px;
+}
+.progress-fill {
+    height: 6px;
+    border-radius: 3px;
+    background: linear-gradient(90deg, #2563eb, #6b21a8);
+}
+
+/* Calendar Day Cards */
+.day-card {
+    border-radius: 15px;
+    padding: 10px;
+    margin-bottom: 12px;
+    background-color: #f5f5f5;
+    box-shadow: 0px 4px 10px rgba(0,0,0,0.1);
+    transition: transform 0.2s;
+}
+.day-card:hover {
+    transform: translateY(-2px);
+}
+
+/* Dark Mode */
 @media (prefers-color-scheme: dark) {
-
-  /* General text */
-  h1, h2, h3, h4, h5, h6, p, span, div {
-    color: #f1f1f1 !important;
-  }
-
-  /* Metric values */
-  div[data-testid="stMetricValue"] {
-    color: #f1f1f1 !important;
-  }
-
-  /* Buttons */
-  button[kind="primary"] {
-    background-color: #2563eb !important;
-    color: white !important;
-  }
-
-  /* Case cards */
-  .case-card {
-    background-color: #1e1e1e !important;
-    color: #f1f1f1 !important;
-    box-shadow: 0px 2px 5px rgba(0,0,0,0.5);
-  }
-
+    body, .stApp, .stSidebar {
+        color: #f1f1f1;
+    }
+    .metric-card, .case-card, .day-card {
+        background-color: #1e1e1e !important;
+        color: #f1f1f1 !important;
+        box-shadow: 0px 4px 12px rgba(0,0,0,0.5);
+    }
+    .progress-bar {background-color: #333;}
 }
 </style>
 """, unsafe_allow_html=True)
 
-# -------------------- SIDEBAR NAVIGATION --------------------
+# -------------------- SIDEBAR --------------------
 st.sidebar.title("Navigation")
 page = st.sidebar.radio("Select View:", ["Dashboard", "Calendar View"])
 st.sidebar.markdown("---")
@@ -103,7 +134,7 @@ def load_data():
 
 df = pd.read_csv(uploaded) if uploaded else load_data()
 
-# -------------------- URGENCY SCORING --------------------
+# -------------------- URGENCY --------------------
 def calc_urgency(row):
     score = 0
     if row["Case_Type"] in ["Bail","Custody","Fraud"]:
@@ -120,35 +151,40 @@ df["Urgency_Level"] = df["Urgency_Score"].apply(
 
 # -------------------- DASHBOARD --------------------
 if page == "Dashboard":
-    st.title("AI-Powered Justice System")
-    st.write("A smart assistant that prioritizes court cases based on urgency and deadlines.")
+    st.markdown('<div class="title-gradient">⚖️ AI-Powered Justice System</div>', unsafe_allow_html=True)
+    st.markdown('<div class="subtitle">Prioritize court cases with intelligence and style.</div>', unsafe_allow_html=True)
 
+    # Metrics
     col1, col2, col3 = st.columns(3)
-    col1.metric("Total Cases", len(df))
-    col2.metric("High Urgency", int((df["Urgency_Level"]=="High").sum()))
-    col3.metric("Average Score", round(df["Urgency_Score"].mean(), 1))
+    col1.markdown(f'<div class="metric-card"><h3>Total Cases</h3><h2>{len(df)}</h2></div>', unsafe_allow_html=True)
+    col2.markdown(f'<div class="metric-card"><h3>High Urgency</h3><h2>{int((df["Urgency_Level"]=="High").sum())}</h2></div>', unsafe_allow_html=True)
+    col3.markdown(f'<div class="metric-card"><h3>Average Score</h3><h2>{round(df["Urgency_Score"].mean(),1)}</h2></div>', unsafe_allow_html=True)
 
     st.markdown("---")
-    st.subheader("Prioritized Case List")
-    st.dataframe(df.sort_values("Urgency_Score", ascending=False), use_container_width=True)
-
-    st.markdown("---")
-    st.subheader("Urgency Summary")
-    st.bar_chart(df["Urgency_Level"].value_counts())
-
-    st.caption("Switch to the 'Calendar View' from the sidebar to visualize scheduled cases.")
+    st.subheader("Prioritized Cases")
+    df_sorted = df.sort_values("Urgency_Score", ascending=False).reset_index(drop=True)
+    for i, r in df_sorted.iterrows():
+        st.markdown(f"""
+        <div class="case-card {r['Urgency_Level'].lower()}">
+            <b>{r['Case_ID']} — {r['Case_Type']}</b><br>
+            <span style='font-size:14px'>{r['Short_Description']}</span>
+            <div class="progress-bar">
+                <div class="progress-fill" style="width:{r['Urgency_Score']}%"></div>
+            </div>
+            <span style='font-size:12px;opacity:0.7'>Deadline: {r['Deadline_Days_Left']} days | Previous Motions: {r['Previous_Motions']}</span>
+        </div>
+        """, unsafe_allow_html=True)
 
 # -------------------- CALENDAR VIEW --------------------
 elif page == "Calendar View":
-    st.title("Case Calendar View")
-    st.write("Color-coded display of prioritized cases across upcoming days.")
+    st.markdown('<div class="title-gradient">📅 Case Calendar View</div>', unsafe_allow_html=True)
+    st.write("Visualized scheduled cases with color-coded urgency bars.")
 
     start = datetime.today()
     days = [start + timedelta(days=i) for i in range(7)]
     schedule = {d.strftime("%a %d %b"): [] for d in days}
     df_sorted = df.sort_values("Urgency_Score", ascending=False).reset_index(drop=True)
 
-    # Distribute cases over days (simple simulation)
     day_index = 0
     for _, row in df_sorted.iterrows():
         day_key = list(schedule.keys())[day_index % len(days)]
@@ -158,19 +194,18 @@ elif page == "Calendar View":
     cols = st.columns(len(schedule))
     for i, (day, cases) in enumerate(schedule.items()):
         with cols[i]:
-            st.markdown(f"### {day}")
-            if not cases:
-                st.write("_No cases scheduled_")
+            st.markdown(f'<div class="day-card"><h4>{day}</h4></div>', unsafe_allow_html=True)
             for r in cases:
-                level_class = "high" if r["Urgency_Level"]=="High" else (
-                              "medium" if r["Urgency_Level"]=="Medium" else "low")
+                level_class = r["Urgency_Level"].lower()
                 st.markdown(f"""
                 <div class="case-card {level_class}">
-                    <b>{r["Case_ID"]}</b> — {r["Case_Type"]}<br>
-                    <span style='font-size:13px'>{r["Short_Description"]}</span><br>
-                    <span style='font-size:11px;opacity:0.7'>Score: {r["Urgency_Score"]} | Deadline: {r["Deadline_Days_Left"]} days</span>
+                    <b>{r['Case_ID']}</b> — {r['Case_Type']}<br>
+                    <span style='font-size:13px'>{r['Short_Description']}</span>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width:{r['Urgency_Score']}%"></div>
+                    </div>
+                    <span style='font-size:11px;opacity:0.7'>Score: {r['Urgency_Score']} | Deadline: {r['Deadline_Days_Left']} days</span>
                 </div>
                 """, unsafe_allow_html=True)
 
     st.success("Calendar simulation ready — each card represents a scheduled case.")
-    st.caption("Return to Dashboard using sidebar navigation.")
