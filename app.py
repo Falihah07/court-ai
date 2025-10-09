@@ -6,8 +6,7 @@ from datetime import datetime, timedelta
 # -------------------- PAGE SETUP --------------------
 st.set_page_config(
     page_title="AI-Powered Justice System",
-    layout="wide",
-    page_icon="⚖️"
+    layout="wide"
 )
 
 # -------------------- CUSTOM CSS --------------------
@@ -15,78 +14,58 @@ st.markdown("""
 <style>
 /* Background */
 [data-testid="stAppViewContainer"] {
-  background: linear-gradient(180deg, #f0f6ff, #ffffff);
-  color: #0a0a0a !important;
+  background: #f7faff;
+  color: #111 !important;
   font-family: 'Segoe UI', sans-serif;
 }
 
 /* Sidebar */
 [data-testid="stSidebar"] {
-  background-color: #e9f2ff;
+  background-color: #eef4ff;
   border-right: 2px solid #c3dafc;
+  color: #111 !important;
 }
 
-/* Titles and Headers */
-h1, h2, h3 {
-  color: #0f172a;
-  font-weight: 700;
+/* Headers */
+h1, h2, h3, h4, h5, h6, p, span, div {
+  color: #111 !important;
 }
 
-/* Metrics */
+/* Metric values */
 div[data-testid="stMetricValue"] {
-  color: #1e3a8a !important;
+  color: #0a0a0a !important;
 }
 
 /* Buttons */
 button[kind="primary"] {
   background-color: #2563eb !important;
   color: white !important;
-  border-radius: 10px !important;
+  border-radius: 8px !important;
 }
 
-/* Cards */
+/* Case cards */
 .case-card {
-  background-color: #e8f0ff;
+  background-color: #ffffff;
   border-left: 5px solid #2563eb;
   padding: 10px;
   margin-bottom: 8px;
   border-radius: 10px;
   box-shadow: 0px 2px 5px rgba(0,0,0,0.1);
+  color: #111 !important;
 }
 
-/* High / Medium / Low urgency colors */
-.high {
-  background-color: #ffebee;
-  border-left: 5px solid #ef4444;
-}
-.medium {
-  background-color: #fff7ed;
-  border-left: 5px solid #f59e0b;
-}
-.low {
-  background-color: #ecfdf5;
-  border-left: 5px solid #10b981;
-}
-
-/* Table */
-[data-testid="stDataFrame"] {
-  background-color: #ffffff !important;
-  border-radius: 10px;
-}
-
-/* Chart section */
-.block-container {
-  padding-top: 1rem;
-}
+/* High / Medium / Low urgency */
+.high {border-left-color:#ef4444;}
+.medium {border-left-color:#f59e0b;}
+.low {border-left-color:#10b981;}
 </style>
 """, unsafe_allow_html=True)
 
-# -------------------- SIDEBAR NAV --------------------
-st.sidebar.image("https://cdn-icons-png.flaticon.com/512/3595/3595455.png", width=60)
+# -------------------- SIDEBAR NAVIGATION --------------------
 st.sidebar.title("Navigation")
-page = st.sidebar.radio("Go to:", ["🏛 Dashboard", "📅 Calendar View"])
+page = st.sidebar.radio("Select View:", ["Dashboard", "Calendar View"])
 st.sidebar.markdown("---")
-uploaded = st.sidebar.file_uploader("📂 Upload Case CSV", type=["csv"])
+uploaded = st.sidebar.file_uploader("Upload Case CSV", type=["csv"])
 
 # -------------------- DATA --------------------
 def load_data():
@@ -119,11 +98,13 @@ def calc_urgency(row):
     return min(score, 100)
 
 df["Urgency_Score"] = df.apply(calc_urgency, axis=1)
-df["Urgency_Level"] = df["Urgency_Score"].apply(lambda x: "High" if x >= 70 else ("Medium" if x >= 40 else "Low"))
+df["Urgency_Level"] = df["Urgency_Score"].apply(
+    lambda x: "High" if x >= 70 else ("Medium" if x >= 40 else "Low")
+)
 
-# -------------------- DASHBOARD PAGE --------------------
-if page == "🏛 Dashboard":
-    st.title("⚖️ AI-Powered Justice System")
+# -------------------- DASHBOARD --------------------
+if page == "Dashboard":
+    st.title("AI-Powered Justice System")
     st.write("A smart assistant that prioritizes court cases based on urgency and deadlines.")
 
     col1, col2, col3 = st.columns(3)
@@ -132,26 +113,26 @@ if page == "🏛 Dashboard":
     col3.metric("Average Score", round(df["Urgency_Score"].mean(), 1))
 
     st.markdown("---")
-    st.subheader("📋 Prioritized Case List")
+    st.subheader("Prioritized Case List")
     st.dataframe(df.sort_values("Urgency_Score", ascending=False), use_container_width=True)
 
     st.markdown("---")
-    st.subheader("📊 Urgency Summary")
+    st.subheader("Urgency Summary")
     st.bar_chart(df["Urgency_Level"].value_counts())
 
-    st.info("Switch to **📅 Calendar View** from the sidebar to visualize scheduled cases.")
+    st.caption("Switch to the 'Calendar View' from the sidebar to visualize scheduled cases.")
 
-# -------------------- CALENDAR PAGE --------------------
-elif page == "📅 Calendar View":
-    st.title("📅 Case Calendar View")
-    st.write("Color-coded view of prioritized cases over upcoming days.")
+# -------------------- CALENDAR VIEW --------------------
+elif page == "Calendar View":
+    st.title("Case Calendar View")
+    st.write("Color-coded display of prioritized cases across upcoming days.")
 
     start = datetime.today()
     days = [start + timedelta(days=i) for i in range(7)]
     schedule = {d.strftime("%a %d %b"): [] for d in days}
     df_sorted = df.sort_values("Urgency_Score", ascending=False).reset_index(drop=True)
 
-    # distribute cases across days (demo scheduler)
+    # Distribute cases over days (simple simulation)
     day_index = 0
     for _, row in df_sorted.iterrows():
         day_key = list(schedule.keys())[day_index % len(days)]
@@ -175,6 +156,5 @@ elif page == "📅 Calendar View":
                 </div>
                 """, unsafe_allow_html=True)
 
-    st.markdown("---")
-    st.success("✅ Calendar simulation ready — each card represents a scheduled case.")
-    st.caption("Back to Dashboard → use sidebar navigation.")
+    st.success("Calendar simulation ready — each card represents a scheduled case.")
+    st.caption("Return to Dashboard using sidebar navigation.")
