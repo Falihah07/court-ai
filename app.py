@@ -3,6 +3,41 @@ import pandas as pd
 import numpy as np
 from datetime import datetime, timedelta
 
+st.markdown("""
+<style>
+/* Main background */
+[data-testid="stAppViewContainer"] {
+  background: linear-gradient(180deg,#f9fcff,#e9f2ff);
+}
+
+/* Sidebar */
+[data-testid="stSidebar"] {
+  background: #f3f7ff;
+  border-right: 2px solid #dbe4ff;
+}
+
+/* Title and headers */
+h1, h2, h3 {
+  color: #1e3a8a;
+}
+
+/* Case cards */
+div[style*="background:#ff6b6b"], 
+div[style*="background:#ffa94d"],
+div[style*="background:#a3e635"] {
+  box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+}
+
+/* Buttons */
+button[kind="primary"] {
+  background-color:#2563eb !important;
+  color:white !important;
+  border-radius:10px !important;
+}
+</style>
+""", unsafe_allow_html=True)
+
+
 st.set_page_config(page_title="AI-Powered Justice System", layout="wide")
 
 # ---- Sidebar navigation ----
