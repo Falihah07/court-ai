@@ -1,0 +1,4 @@
+Case_ID,Case_Type,Pending_Days,Deadline_Days_Left,Previous_Motions
+C201,Bail,20,3,2
+C202,Custody,200,5,1
+C203,Fraud,180,15,3
