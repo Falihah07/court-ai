@@ -12,21 +12,9 @@ st.set_page_config(
 # -------------------- CUSTOM CSS --------------------
 st.markdown("""
 <style>
-/* Background */
-[data-testid="stAppViewContainer"] {
-  background: #f7faff;
-  color: #111 !important;
-  font-family: 'Segoe UI', sans-serif;
-}
+/* ----------------- Adaptive UI ----------------- */
 
-/* Sidebar */
-[data-testid="stSidebar"] {
-  background-color: #eef4ff;
-  border-right: 2px solid #c3dafc;
-  color: #111 !important;
-}
-
-/* Headers */
+/* General text */
 h1, h2, h3, h4, h5, h6, p, span, div {
   color: #111 !important;
 }
@@ -43,21 +31,49 @@ button[kind="primary"] {
   border-radius: 8px !important;
 }
 
-/* Case cards */
+/* ----------------- Case Cards ----------------- */
 .case-card {
-  background-color: #ffffff;
-  border-left: 5px solid #2563eb;
   padding: 10px;
   margin-bottom: 8px;
   border-radius: 10px;
   box-shadow: 0px 2px 5px rgba(0,0,0,0.1);
+  border-left: 5px solid;
   color: #111 !important;
+  background-color: #ffffff;
 }
 
-/* High / Medium / Low urgency */
+/* Urgency colors */
 .high {border-left-color:#ef4444;}
 .medium {border-left-color:#f59e0b;}
 .low {border-left-color:#10b981;}
+
+/* ----------------- Dark Mode Support ----------------- */
+@media (prefers-color-scheme: dark) {
+
+  /* General text */
+  h1, h2, h3, h4, h5, h6, p, span, div {
+    color: #f1f1f1 !important;
+  }
+
+  /* Metric values */
+  div[data-testid="stMetricValue"] {
+    color: #f1f1f1 !important;
+  }
+
+  /* Buttons */
+  button[kind="primary"] {
+    background-color: #2563eb !important;
+    color: white !important;
+  }
+
+  /* Case cards */
+  .case-card {
+    background-color: #1e1e1e !important;
+    color: #f1f1f1 !important;
+    box-shadow: 0px 2px 5px rgba(0,0,0,0.5);
+  }
+
+}
 </style>
 """, unsafe_allow_html=True)
 
