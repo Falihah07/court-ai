@@ -1,45 +1,69 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
 
-st.set_page_config(page_title="AI Justice Assistant", layout="wide")
+st.set_page_config(page_title="Court Case Prioritization – AI Assistant", layout="wide")
 
-st.title("⚖️ AI-Powered Justice System")
-st.write("Smart assistant that prioritizes court cases by urgency.")
+# --- PAGE HEADER ---
+st.title("⚖️ Court Case Prioritization – AI Assistant")
+st.write("Analyze and prioritize court cases based on urgency factors like deadlines, motions, and case type.")
 
-uploaded_file = st.file_uploader("📂 Upload Case Data (CSV)", type=["csv"])
+st.markdown("---")
 
-if uploaded_file is not None:
-    df = pd.read_csv(uploaded_file)
-else:
-    st.info("Using sample data for demo")
-    df = pd.DataFrame({
-        "Case_ID": ["C101","C102","C103","C104"],
-        "Case_Type": ["Bail","Custody","Fraud","Land Dispute"],
-        "Pending_Days": [30,120,240,90],
-        "Deadline_Days_Left": [3,10,60,20],
-        "Previous_Motions": [1,2,3,1]
-    })
+# --- LAYOUT: FORM + ANALYSIS ---
+col1, col2 = st.columns(2, gap="large")
 
-def calc_urgency(row):
-    score = 0
-    if row["Case_Type"] in ["Bail","Custody","Fraud"]:
-        score += 40
-    if row["Pending_Days"] > 100:
-        score += 20
-    if row["Deadline_Days_Left"] < 10:
-        score += 25
-    if row["Previous_Motions"] > 2:
-        score += 15
-    return min(score, 100)
+# ----- LEFT SIDE: INPUT FORM -----
+with col1:
+    st.subheader("📄 Enter Case Details")
 
-df["Urgency_Score"] = df.apply(calc_urgency, axis=1)
-df["Urgency_Level"] = df["Urgency_Score"].apply(lambda x: "High" if x>=70 else "Low")
+    case_id = st.text_input("Case ID", placeholder="e.g., C101")
+    case_type = st.selectbox("Case Type", ["Select", "Bail", "Custody", "Fraud", "Contract", "Land Dispute"])
+    filing_date = st.date_input("Filing Date")
+    parties = st.number_input("Parties Involved", min_value=1, step=1, value=2)
+    previous_motions = st.number_input("Previous Motions", min_value=0, step=1)
+    deadline_days = st.number_input("Days Left for Deadline", min_value=0, step=1)
+    summary = st.text_area("Brief Case Summary", placeholder="Provide short details...")
 
-st.subheader("📋 Prioritized Case List")
-st.dataframe(df.sort_values("Urgency_Score", ascending=False), use_container_width=True)
+    analyze = st.button("🔍 Analyze Case")
 
-st.subheader("📊 Urgency Summary")
-st.bar_chart(df["Urgency_Level"].value_counts())
+# ----- RIGHT SIDE: ANALYSIS RESULT -----
+with col2:
+    st.subheader("📊 Analysis Results")
 
-st.caption("Prototype by Team Justice League — HackElite 2025")
+    if analyze:
+        urgency_score = 0
+        reasons = []
+
+        if case_type in ["Bail", "Custody", "Fraud"]:
+            urgency_score += 40
+            reasons.append("Critical case type (e.g., Bail, Custody, Fraud)")
+
+        if deadline_days < 10:
+            urgency_score += 25
+            reasons.append("Tight deadline (<10 days remaining)")
+
+        if previous_motions > 2:
+            urgency_score += 15
+            reasons.append(f"High motion count ({previous_motions})")
+
+        if urgency_score == 0:
+            urgency_score += 10
+            reasons.append("No specific urgency detected — normal priority")
+
+        urgency_label = "High" if urgency_score >= 70 else ("Medium" if urgency_score >= 40 else "Low")
+
+        # Display results
+        st.markdown(f"### Prioritization Score: **{urgency_score}** / 100")
+        st.markdown(f"**Predicted Urgency:** :red[{urgency_label}]")
+
+        st.markdown("#### 🔎 Key Factors Considered:")
+        for r in reasons:
+            st.write(f"- {r}")
+
+        st.markdown("---")
+        st.success("✅ Recommendation: Approve prioritization for judge review.")
+    else:
+        st.info("Fill in the case details and click *Analyze Case* to generate the urgency score.")
+
+st.markdown("---")
+st.caption("Developed by Team Justice League — HackElite 2025")
