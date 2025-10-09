@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
 from datetime import datetime, timedelta
 
 # -------------------- PAGE SETUP --------------------
@@ -13,9 +12,7 @@ st.set_page_config(
 st.markdown("""
 <style>
 /* ----------------- Global Styles ----------------- */
-body, .stApp, .stSidebar {
-    font-family: 'Segoe UI', sans-serif;
-}
+body, .stApp, .stSidebar { font-family: 'Segoe UI', sans-serif; }
 
 /* Gradient Title */
 .title-gradient {
@@ -25,13 +22,7 @@ body, .stApp, .stSidebar {
     font-size: 40px;
     font-weight: 700;
 }
-
-/* Subtitle */
-.subtitle {
-    font-size: 18px;
-    color: #555;
-    margin-bottom: 20px;
-}
+.subtitle { font-size: 18px; color: #555; margin-bottom: 20px; }
 
 /* Metric Cards */
 .metric-card {
@@ -42,11 +33,9 @@ body, .stApp, .stSidebar {
     box-shadow: 0 6px 12px rgba(0,0,0,0.1);
     transition: transform 0.2s;
 }
-.metric-card:hover {
-    transform: translateY(-5px);
-}
+.metric-card:hover { transform: translateY(-5px); }
 
-/* Prioritized Case Cards */
+/* Case Cards */
 .case-card {
     padding: 15px;
     margin-bottom: 12px;
@@ -61,24 +50,14 @@ body, .stApp, .stSidebar {
     box-shadow: 0px 8px 18px rgba(0,0,0,0.15);
 }
 
-/* Urgency colors */
+/* Urgency Colors */
 .high {border-left-color:#ef4444;}
 .medium {border-left-color:#f59e0b;}
 .low {border-left-color:#10b981;}
 
-/* Deadline Progress Bar */
-.progress-bar {
-    height: 6px;
-    border-radius: 3px;
-    background-color: #e0e0e0;
-    margin-top: 8px;
-    margin-bottom: 5px;
-}
-.progress-fill {
-    height: 6px;
-    border-radius: 3px;
-    background: linear-gradient(90deg, #2563eb, #6b21a8);
-}
+/* Progress Bar */
+.progress-bar { height: 6px; border-radius: 3px; background-color: #e0e0e0; margin-top: 8px; margin-bottom: 5px; }
+.progress-fill { height: 6px; border-radius: 3px; background: linear-gradient(90deg, #2563eb, #6b21a8); }
 
 /* Calendar Day Cards */
 .day-card {
@@ -89,21 +68,13 @@ body, .stApp, .stSidebar {
     box-shadow: 0px 4px 10px rgba(0,0,0,0.1);
     transition: transform 0.2s;
 }
-.day-card:hover {
-    transform: translateY(-2px);
-}
+.day-card:hover { transform: translateY(-2px); }
 
 /* Dark Mode */
 @media (prefers-color-scheme: dark) {
-    body, .stApp, .stSidebar {
-        color: #f1f1f1;
-    }
-    .metric-card, .case-card, .day-card {
-        background-color: #1e1e1e !important;
-        color: #f1f1f1 !important;
-        box-shadow: 0px 4px 12px rgba(0,0,0,0.5);
-    }
-    .progress-bar {background-color: #333;}
+    body, .stApp, .stSidebar { color: #f1f1f1; }
+    .metric-card, .case-card, .day-card { background-color: #1e1e1e !important; color: #f1f1f1 !important; box-shadow: 0px 4px 12px rgba(0,0,0,0.5); }
+    .progress-bar { background-color: #333; }
 }
 </style>
 """, unsafe_allow_html=True)
@@ -137,17 +108,14 @@ df = pd.read_csv(uploaded) if uploaded else load_data()
 # -------------------- URGENCY --------------------
 def calc_urgency(row):
     score = 0
-    if row["Case_Type"] in ["Bail","Custody","Fraud"]:
-        score += 40
+    if row["Case_Type"] in ["Bail","Custody","Fraud"]: score += 40
     if row["Pending_Days"] > 100: score += 15
     if row["Deadline_Days_Left"] < 10: score += 25
     if row["Previous_Motions"] > 2: score += 10
     return min(score, 100)
 
 df["Urgency_Score"] = df.apply(calc_urgency, axis=1)
-df["Urgency_Level"] = df["Urgency_Score"].apply(
-    lambda x: "High" if x >= 70 else ("Medium" if x >= 40 else "Low")
-)
+df["Urgency_Level"] = df["Urgency_Score"].apply(lambda x: "High" if x>=70 else ("Medium" if x>=40 else "Low"))
 
 # -------------------- DASHBOARD --------------------
 if page == "Dashboard":
@@ -162,16 +130,31 @@ if page == "Dashboard":
 
     st.markdown("---")
     st.subheader("Prioritized Cases")
+
     df_sorted = df.sort_values("Urgency_Score", ascending=False).reset_index(drop=True)
     for i, r in df_sorted.iterrows():
+        # Urgency badge
+        urgency_emoji = "🔴" if r["Urgency_Level"]=="High" else ("🟠" if r["Urgency_Level"]=="Medium" else "🟢")
+        urgency_text = f"{urgency_emoji} {r['Urgency_Level']}"
+        # Deadline badge color
+        deadline_color = "#ef4444" if r["Deadline_Days_Left"] < 10 else "#2563eb"
+
         st.markdown(f"""
         <div class="case-card {r['Urgency_Level'].lower()}">
             <b>{r['Case_ID']} — {r['Case_Type']}</b><br>
-            <span style='font-size:14px'>{r['Short_Description']}</span>
+            <span style='font-size:14px'>{r['Short_Description']}</span><br>
+            <span style='font-size:12px;'>
+                <span style="background:{deadline_color};color:white;padding:2px 6px;border-radius:8px;margin-right:5px;">
+                    📅 {r['Deadline_Days_Left']} days left
+                </span>
+                <span style="background:#6b21a8;color:white;padding:2px 6px;border-radius:8px;">
+                    ⚖️ {r['Previous_Motions']} motions
+                </span>
+            </span>
             <div class="progress-bar">
                 <div class="progress-fill" style="width:{r['Urgency_Score']}%"></div>
             </div>
-            <span style='font-size:12px;opacity:0.7'>Deadline: {r['Deadline_Days_Left']} days | Previous Motions: {r['Previous_Motions']}</span>
+            <span style='font-size:12px;opacity:0.7'>Urgency: {urgency_text}</span>
         </div>
         """, unsafe_allow_html=True)
 
@@ -197,14 +180,26 @@ elif page == "Calendar View":
             st.markdown(f'<div class="day-card"><h4>{day}</h4></div>', unsafe_allow_html=True)
             for r in cases:
                 level_class = r["Urgency_Level"].lower()
+                urgency_emoji = "🔴" if r["Urgency_Level"]=="High" else ("🟠" if r["Urgency_Level"]=="Medium" else "🟢")
+                urgency_text = f"{urgency_emoji} {r['Urgency_Level']}"
+                deadline_color = "#ef4444" if r["Deadline_Days_Left"] < 10 else "#2563eb"
+
                 st.markdown(f"""
                 <div class="case-card {level_class}">
-                    <b>{r['Case_ID']}</b> — {r['Case_Type']}<br>
-                    <span style='font-size:13px'>{r['Short_Description']}</span>
+                    <b>{r['Case_ID']} — {r['Case_Type']}</b><br>
+                    <span style='font-size:13px'>{r['Short_Description']}</span><br>
+                    <span style='font-size:12px;'>
+                        <span style="background:{deadline_color};color:white;padding:2px 6px;border-radius:8px;margin-right:5px;">
+                            📅 {r['Deadline_Days_Left']} days left
+                        </span>
+                        <span style="background:#6b21a8;color:white;padding:2px 6px;border-radius:8px;">
+                            ⚖️ {r['Previous_Motions']} motions
+                        </span>
+                    </span>
                     <div class="progress-bar">
                         <div class="progress-fill" style="width:{r['Urgency_Score']}%"></div>
                     </div>
-                    <span style='font-size:11px;opacity:0.7'>Score: {r['Urgency_Score']} | Deadline: {r['Deadline_Days_Left']} days</span>
+                    <span style='font-size:12px;opacity:0.7'>Urgency: {urgency_text}</span>
                 </div>
                 """, unsafe_allow_html=True)
 
