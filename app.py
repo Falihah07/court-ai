@@ -67,3 +67,4 @@ with col2:
 
 st.markdown("---")
 st.caption("Developed by Team Justice League — HackElite 2025")
+
