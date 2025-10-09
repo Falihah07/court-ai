@@ -1,70 +1,101 @@
 import streamlit as st
 import pandas as pd
+import numpy as np
+from datetime import datetime, timedelta
 
-st.set_page_config(page_title="Court Case Prioritization – AI Assistant", layout="wide")
+st.set_page_config(page_title="AI-Powered Justice System", layout="wide")
 
-# --- PAGE HEADER ---
-st.title("⚖️ Court Case Prioritization – AI Assistant")
-st.write("Analyze and prioritize court cases based on urgency factors like deadlines, motions, and case type.")
+# ---- Sidebar navigation ----
+st.sidebar.title("⚖️ Navigation")
+page = st.sidebar.radio("Go to:", ["Dashboard", "Calendar 📅"])
 
-st.markdown("---")
+# ---- Load / sample data ----
+def load_data():
+    return pd.DataFrame({
+        "Case_ID": ["C101","C102","C103","C104","C105","C106"],
+        "Case_Type": ["Bail","Custody","Fraud","Contract","Land Dispute","Bail"],
+        "Pending_Days": [30,150,240,90,110,10],
+        "Deadline_Days_Left": [3,20,5,40,2,60],
+        "Previous_Motions": [1,2,3,1,0,0],
+        "Short_Description": [
+            "Bail petition urgent","Custody appeal","Investigation pending",
+            "Contract dispute","Title correction","Bail – new"
+        ]
+    })
 
-# --- LAYOUT: FORM + ANALYSIS ---
-col1, col2 = st.columns(2, gap="large")
+uploaded = st.sidebar.file_uploader("📂 Upload Case CSV", type=["csv"])
+df = pd.read_csv(uploaded) if uploaded else load_data()
 
-# ----- LEFT SIDE: INPUT FORM -----
-with col1:
-    st.subheader("📄 Enter Case Details")
+# ---- Urgency scoring ----
+def calc_urgency(row):
+    score = 0
+    if row["Case_Type"] in ["Bail","Custody","Fraud"]:
+        score += 40
+    if row["Pending_Days"] > 100: score += 15
+    if row["Deadline_Days_Left"] < 10: score += 25
+    if row["Previous_Motions"] > 2: score += 10
+    return min(score,100)
 
-    case_id = st.text_input("Case ID", placeholder="e.g., C101")
-    case_type = st.selectbox("Case Type", ["Select", "Bail", "Custody", "Fraud", "Contract", "Land Dispute"])
-    filing_date = st.date_input("Filing Date")
-    parties = st.number_input("Parties Involved", min_value=1, step=1, value=2)
-    previous_motions = st.number_input("Previous Motions", min_value=0, step=1)
-    deadline_days = st.number_input("Days Left for Deadline", min_value=0, step=1)
-    summary = st.text_area("Brief Case Summary", placeholder="Provide short details...")
+df["Urgency_Score"] = df.apply(calc_urgency, axis=1)
+df["Urgency_Level"] = df["Urgency_Score"].apply(
+    lambda x: "High" if x>=70 else ("Medium" if x>=40 else "Low")
+)
 
-    analyze = st.button("🔍 Analyze Case")
+# ===========================
+# DASHBOARD PAGE
+# ===========================
+if page == "Dashboard":
+    st.title("⚖️ AI-Powered Justice System – Dashboard")
+    st.write("Automatically prioritizes cases based on urgency factors.")
 
-# ----- RIGHT SIDE: ANALYSIS RESULT -----
-with col2:
-    st.subheader("📊 Analysis Results")
+    col1, col2, col3 = st.columns(3)
+    col1.metric("Total Cases", len(df))
+    col2.metric("High Urgency", int((df["Urgency_Level"]=="High").sum()))
+    col3.metric("Avg Score", round(df["Urgency_Score"].mean(),1))
 
-    if analyze:
-        urgency_score = 0
-        reasons = []
+    st.subheader("📋 Prioritized Case List")
+    st.dataframe(df.sort_values("Urgency_Score", ascending=False), use_container_width=True)
 
-        if case_type in ["Bail", "Custody", "Fraud"]:
-            urgency_score += 40
-            reasons.append("Critical case type (e.g., Bail, Custody, Fraud)")
+    st.subheader("📊 Urgency Summary")
+    st.bar_chart(df["Urgency_Level"].value_counts())
 
-        if deadline_days < 10:
-            urgency_score += 25
-            reasons.append("Tight deadline (<10 days remaining)")
+    st.info("Use the sidebar to open the Calendar 📅 view.")
 
-        if previous_motions > 2:
-            urgency_score += 15
-            reasons.append(f"High motion count ({previous_motions})")
+# ===========================
+# CALENDAR PAGE
+# ===========================
+else:
+    st.title("📅 Case Calendar View")
+    st.write("Displays urgent and scheduled cases over upcoming days.")
 
-        if urgency_score == 0:
-            urgency_score += 10
-            reasons.append("No specific urgency detected — normal priority")
+    # create schedule: highest urgency first over next 7 days
+    start = datetime.today()
+    days = [start + timedelta(days=i) for i in range(7)]
+    schedule = {d.strftime("%a %d %b"): [] for d in days}
+    df_sorted = df.sort_values("Urgency_Score", ascending=False).reset_index(drop=True)
 
-        urgency_label = "High" if urgency_score >= 70 else ("Medium" if urgency_score >= 40 else "Low")
+    day_index = 0
+    for _, row in df_sorted.iterrows():
+        day_key = list(schedule.keys())[day_index % len(days)]
+        schedule[day_key].append(row)
+        day_index += 1
 
-        # Display results
-        st.markdown(f"### Prioritization Score: **{urgency_score}** / 100")
-        st.markdown(f"**Predicted Urgency:** :red[{urgency_label}]")
+    cols = st.columns(len(schedule))
+    for i,(day, cases) in enumerate(schedule.items()):
+        with cols[i]:
+            st.markdown(f"**{day}**")
+            if not cases:
+                st.write("_No cases_")
+            for r in cases:
+                color = "#ff6b6b" if r["Urgency_Level"]=="High" else (
+                        "#ffa94d" if r["Urgency_Level"]=="Medium" else "#a3e635")
+                st.markdown(f"""
+                <div style='background:{color};padding:6px;border-radius:6px;margin-bottom:5px;color:#000'>
+                    <b>{r["Case_ID"]}</b> – {r["Case_Type"]}<br>
+                    <span style='font-size:12px'>{r["Short_Description"]}</span><br>
+                    <span style='font-size:11px'>Score: {r["Urgency_Score"]}</span>
+                </div>
+                """, unsafe_allow_html=True)
 
-        st.markdown("#### 🔎 Key Factors Considered:")
-        for r in reasons:
-            st.write(f"- {r}")
-
-        st.markdown("---")
-        st.success("✅ Recommendation: Approve prioritization for judge review.")
-    else:
-        st.info("Fill in the case details and click *Analyze Case* to generate the urgency score.")
-
-st.markdown("---")
-st.caption("Developed by Team Justice League — HackElite 2025")
-
+    st.markdown("---")
+    st.caption("Back to Dashboard → use sidebar switch.")
