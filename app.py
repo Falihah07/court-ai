@@ -88,16 +88,18 @@ uploaded = st.sidebar.file_uploader("Upload Case CSV", type=["csv"])
 # -------------------- DATA --------------------
 def load_data():
     return pd.DataFrame({
-        "Case_ID": ["C101","C102","C103","C104"],
-        "Case_Type": ["Bail","Custody","Fraud","Contract"],
-        "Pending_Days": [150, 90, 110, 30],
-        "Deadline_Days_Left": [3, 15, 12, 40],
-        "Previous_Motions": [3, 1, 1, 0],
+        "Case_ID": ["C101","C102","C103","C104","C105","C106"],
+        "Case_Type": ["Bail","Custody","Fraud","Contract","Land Dispute","Bail"],
+        "Pending_Days": [30,150,240,90,110,10],
+        "Deadline_Days_Left": [3,20,5,40,2,60],
+        "Previous_Motions": [1,2,3,1,0,0],
         "Short_Description": [
             "Bail petition urgent",
             "Custody appeal pending",
-            "Fraud investigation ongoing",
-            "Contract dispute minor"
+            "Fraud investigation",
+            "Contract dispute",
+            "Title correction needed",
+            "Bail - new application"
         ]
     })
 
@@ -110,8 +112,6 @@ def calc_urgency(row):
     if row["Pending_Days"] > 100: score += 15
     if row["Deadline_Days_Left"] < 10: score += 25
     if row["Previous_Motions"] > 2: score += 10
-    # Force C101 to be high urgency
-    if row["Case_ID"] == "C101": score = 85
     return min(score, 100)
 
 df["Urgency_Score"] = df.apply(calc_urgency, axis=1)
@@ -132,9 +132,11 @@ if page == "Dashboard":
     st.subheader("Prioritized Cases")
 
     df_sorted = df.sort_values("Urgency_Score", ascending=False).reset_index(drop=True)
-    for _, r in df_sorted.iterrows():
+    for i, r in df_sorted.iterrows():
+        # Urgency badge
         urgency_emoji = "🔴" if r["Urgency_Level"]=="High" else ("🟠" if r["Urgency_Level"]=="Medium" else "🟢")
         urgency_text = f"{urgency_emoji} {r['Urgency_Level']}"
+        # Deadline badge color
         deadline_color = "#ef4444" if r["Deadline_Days_Left"] < 10 else "#2563eb"
 
         st.markdown(f"""
@@ -156,54 +158,7 @@ if page == "Dashboard":
         </div>
         """, unsafe_allow_html=True)
 
-
 # -------------------- CALENDAR VIEW --------------------
-elif page == "Calendar View":
-    st.markdown('<div class="title-gradient">📅 Case Calendar View</div>', unsafe_allow_html=True)
-    st.write("Visualized scheduled cases with color-coded urgency bars.")
-
-    start = datetime.today()
-    days = [start + timedelta(days=i) for i in range(7)]
-    schedule = {d.strftime("%a %d %b"): [] for d in days}
-    df_sorted = df.sort_values("Urgency_Score", ascending=False).reset_index(drop=True)
-
-    day_index = 0
-    for _, row in df_sorted.iterrows():
-        day_key = list(schedule.keys())[day_index % len(days)]
-        schedule[day_key].append(row)
-        day_index += 1
-
-    cols = st.columns(len(schedule))
-    for i, (day, cases) in enumerate(schedule.items()):
-        with cols[i]:
-            st.markdown(f'<div class="day-card"><h4>{day}</h4></div>', unsafe_allow_html=True)
-            for r in cases:
-                level_class = r["Urgency_Level"].lower()
-                urgency_emoji = "🔴" if r["Urgency_Level"]=="High" else ("🟠" if r["Urgency_Level"]=="Medium" else "🟢")
-                urgency_text = f"{urgency_emoji} {r['Urgency_Level']}"
-                deadline_color = "#ef4444" if r["Deadline_Days_Left"] < 10 else "#2563eb"
-
-                st.markdown(f"""
-                <div class="case-card {level_class}">
-                    <b>{r['Case_ID']} — {r['Case_Type']}</b><br>
-                    <span style='font-size:13px'>{r['Short_Description']}</span><br>
-                    <span style='font-size:12px;'>
-                        <span style="background:{deadline_color};color:white;padding:2px 6px;border-radius:8px;margin-right:5px;">
-                            📅 {r['Deadline_Days_Left']} days left
-                        </span>
-                        <span style="background:#6b21a8;color:white;padding:2px 6px;border-radius:8px;">
-                            ⚖️ {r['Previous_Motions']} motions
-                        </span>
-                    </span>
-                    <div class="progress-bar">
-                        <div class="progress-fill" style="width:{r['Urgency_Score']}%"></div>
-                    </div>
-                    <span style='font-size:12px;opacity:0.7'>Urgency: {urgency_text}</span>
-                </div>
-                """, unsafe_allow_html=True)
-
-    st.success("Calendar simulation ready — each card represents a scheduled case.")
-
 elif page == "Calendar View":
     st.markdown('<div class="title-gradient">📅 Case Calendar View</div>', unsafe_allow_html=True)
     st.write("Visualized scheduled cases with color-coded urgency bars.")
