@@ -156,9 +156,10 @@ if page == "Dashboard":
         </div>
         """, unsafe_allow_html=True)
 
+
 # -------------------- CALENDAR VIEW --------------------
 elif page == "Calendar View":
-    st.markdown('<div class="title-gradient">📅 Case Calendar View</div>', unsafe_allow_html=True)
+    st.markdown("<h1 style='color:#2563eb;'>📅 Case Calendar View</h1>", unsafe_allow_html=True)
     st.write("Visualized scheduled cases with color-coded urgency bars.")
 
     start = datetime.today()
@@ -166,39 +167,72 @@ elif page == "Calendar View":
     schedule = {d.strftime("%a %d %b"): [] for d in days}
     df_sorted = df.sort_values("Urgency_Score", ascending=False).reset_index(drop=True)
 
+    # Distribute cases over days (simple simulation)
     day_index = 0
     for _, row in df_sorted.iterrows():
         day_key = list(schedule.keys())[day_index % len(days)]
         schedule[day_key].append(row)
         day_index += 1
 
-    cols = st.columns(len(schedule))
-    for i, (day, cases) in enumerate(schedule.items()):
-        with cols[i]:
-            st.markdown(f'<div class="day-card"><h4>{day}</h4></div>', unsafe_allow_html=True)
-            for r in cases:
-                level_class = r["Urgency_Level"].lower()
-                urgency_emoji = "🔴" if r["Urgency_Level"]=="High" else ("🟠" if r["Urgency_Level"]=="Medium" else "🟢")
-                urgency_text = f"{urgency_emoji} {r['Urgency_Level']}"
-                deadline_color = "#ef4444" if r["Deadline_Days_Left"] < 10 else "#2563eb"
+    # Horizontal scroll container
+    st.markdown("""
+    <style>
+    .scroll-container {
+        display: flex;
+        overflow-x: auto;
+        padding: 15px 0;
+        gap: 15px;
+        scrollbar-width: thin;
+    }
+    .scroll-container::-webkit-scrollbar {
+        height: 8px;
+    }
+    .scroll-container::-webkit-scrollbar-thumb {
+        background: #2563eb;
+        border-radius: 10px;
+    }
+    .day-column {
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        flex: 0 0 180px;
+        padding: 10px;
+        text-align: center;
+    }
+    .case-card {
+        background-color: #ffffff;
+        border-left: 5px solid #2563eb;
+        padding: 10px;
+        margin-top: 8px;
+        border-radius: 10px;
+        box-shadow: 0px 2px 5px rgba(0,0,0,0.1);
+    }
+    .high {border-left-color:#ef4444;}
+    .medium {border-left-color:#f59e0b;}
+    .low {border-left-color:#10b981;}
+    </style>
+    """, unsafe_allow_html=True)
 
-                st.markdown(f"""
-                <div class="case-card {level_class}">
-                    <b>{r['Case_ID']} — {r['Case_Type']}</b><br>
-                    <span style='font-size:13px'>{r['Short_Description']}</span><br>
-                    <span style='font-size:12px;'>
-                        <span style="background:{deadline_color};color:white;padding:2px 6px;border-radius:8px;margin-right:5px;">
-                            📅 {r['Deadline_Days_Left']} days left
-                        </span>
-                        <span style="background:#6b21a8;color:white;padding:2px 6px;border-radius:8px;">
-                            ⚖️ {r['Previous_Motions']} motions
-                        </span>
-                    </span>
-                    <div class="progress-bar">
-                        <div class="progress-fill" style="width:{r['Urgency_Score']}%"></div>
-                    </div>
-                    <span style='font-size:12px;opacity:0.7'>Urgency: {urgency_text}</span>
-                </div>
-                """, unsafe_allow_html=True)
+    # Generate horizontally scrollable layout
+    st.markdown("<div class='scroll-container'>", unsafe_allow_html=True)
+    for day, cases in schedule.items():
+        st.markdown(f"<div class='day-column'><h4>{day}</h4>", unsafe_allow_html=True)
+        if not cases:
+            st.markdown("<p style='font-size:13px;opacity:0.6;'>No cases scheduled</p>", unsafe_allow_html=True)
+        for r in cases:
+            level_class = "high" if r["Urgency_Level"]=="High" else (
+                          "medium" if r["Urgency_Level"]=="Medium" else "low")
+            st.markdown(f"""
+            <div class="case-card {level_class}">
+                <b>{r["Case_ID"]}</b> — {r["Case_Type"]}<br>
+                <span style='font-size:13px'>{r["Short_Description"]}</span><br>
+                <span style='font-size:11px;opacity:0.7'>
+                    Score: {r["Urgency_Score"]} | Deadline: {r["Deadline_Days_Left"]} days
+                </span>
+            </div>
+            """, unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
+    st.markdown("</div>", unsafe_allow_html=True)
 
-    st.success("Calendar simulation ready — each card represents a scheduled case.")
+    st.success("Calendar simulation ready — scroll horizontally to explore all days.")
+    st.caption("Return to Dashboard using sidebar navigation.")
