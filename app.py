@@ -49,16 +49,21 @@ body, .stApp, .stSidebar { font-family: 'Segoe UI', sans-serif; }
 st.sidebar.title("Navigation")
 page = st.sidebar.radio("Select View:", ["Dashboard", "Calendar View"])
 st.sidebar.markdown("---")
-uploaded = st.sidebar.file_uploader("📂 Upload Case CSV (required)", type=["csv"])
+uploaded = st.sidebar.file_uploader("📂 Upload Your Case CSV (optional)", type=["csv"])
 
 # -------------------- DATA LOADING --------------------
-if uploaded is None:
-    st.warning("⚠️ Please upload your CSV file to view the dashboard.")
-    st.stop()
+if uploaded is not None:
+    df = pd.read_csv(uploaded)
+    st.sidebar.success("✅ Using uploaded CSV file.")
+else:
+    try:
+        df = pd.read_csv("cases.csv")
+        st.sidebar.info("ℹ️ Using default dataset (cases.csv from repository).")
+    except FileNotFoundError:
+        st.error("❌ No CSV file found. Please upload a file to continue.")
+        st.stop()
 
-df = pd.read_csv(uploaded)
-
-# Check columns
+# Check for required columns
 required_cols = ["Case_ID","Case_Type","Pending_Days","Deadline_Days_Left","Previous_Motions","Short_Description"]
 for col in required_cols:
     if col not in df.columns:
@@ -86,7 +91,7 @@ df["Urgency_Level"] = df["Urgency_Score"].apply(
 # -------------------- DASHBOARD --------------------
 if page == "Dashboard":
     st.markdown('<div class="title-gradient">⚖️ AI-Powered Justice System</div>', unsafe_allow_html=True)
-    st.markdown('<div class="subtitle">Prioritize court cases intelligently using your uploaded data.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="subtitle">Prioritize court cases intelligently using AI-driven urgency scores.</div>', unsafe_allow_html=True)
 
     col1, col2, col3 = st.columns(3)
     col1.markdown(f'<div class="metric-card"><h3>Total Cases</h3><h2>{len(df)}</h2></div>', unsafe_allow_html=True)
