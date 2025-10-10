@@ -158,81 +158,30 @@ if page == "Dashboard":
 
 
 # -------------------- CALENDAR VIEW --------------------
-elif page == "Calendar View":
-    st.markdown("<h1 style='color:#2563eb;'>📅 Case Calendar View</h1>", unsafe_allow_html=True)
-    st.write("Visualized scheduled cases with color-coded urgency bars.")
+# Auto-wrap layout for better spacing — prevents cards from clipping
+cols_per_row = 5
+days_list = list(schedule.items())
 
-    start = datetime.today()
-    days = [start + timedelta(days=i) for i in range(7)]
-    schedule = {d.strftime("%a %d %b"): [] for d in days}
-    df_sorted = df.sort_values("Urgency_Score", ascending=False).reset_index(drop=True)
+for row_start in range(0, len(days_list), cols_per_row):
+    row_days = days_list[row_start:row_start + cols_per_row]
+    cols = st.columns(len(row_days))
 
-    # Distribute cases over days (simple simulation)
-    day_index = 0
-    for _, row in df_sorted.iterrows():
-        day_key = list(schedule.keys())[day_index % len(days)]
-        schedule[day_key].append(row)
-        day_index += 1
+    for i, (day, cases) in enumerate(row_days):
+        with cols[i]:
+            st.markdown(f"### {day}")
+            if not cases:
+                st.write("_No cases scheduled_")
+            for r in cases:
+                level_class = "high" if r["Urgency_Level"] == "High" else (
+                              "medium" if r["Urgency_Level"] == "Medium" else "low")
+                st.markdown(f"""
+                <div class="case-card {level_class}">
+                    <b>{r["Case_ID"]}</b> — {r["Case_Type"]}<br>
+                    <span style='font-size:13px'>{r["Short_Description"]}</span><br>
+                    <span style='font-size:11px;opacity:0.7'>
+                        Score: {r["Urgency_Score"]} | Deadline: {r["Deadline_Days_Left"]} days
+                    </span>
+                </div>
+                """, unsafe_allow_html=True)
 
-    # Horizontal scroll container
-    st.markdown("""
-    <style>
-    .scroll-container {
-        display: flex;
-        overflow-x: auto;
-        padding: 15px 0;
-        gap: 15px;
-        scrollbar-width: thin;
-    }
-    .scroll-container::-webkit-scrollbar {
-        height: 8px;
-    }
-    .scroll-container::-webkit-scrollbar-thumb {
-        background: #2563eb;
-        border-radius: 10px;
-    }
-    .day-column {
-        background: white;
-        border-radius: 15px;
-        box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-        flex: 0 0 180px;
-        padding: 10px;
-        text-align: center;
-    }
-    .case-card {
-        background-color: #ffffff;
-        border-left: 5px solid #2563eb;
-        padding: 10px;
-        margin-top: 8px;
-        border-radius: 10px;
-        box-shadow: 0px 2px 5px rgba(0,0,0,0.1);
-    }
-    .high {border-left-color:#ef4444;}
-    .medium {border-left-color:#f59e0b;}
-    .low {border-left-color:#10b981;}
-    </style>
-    """, unsafe_allow_html=True)
 
-    # Generate horizontally scrollable layout
-    st.markdown("<div class='scroll-container'>", unsafe_allow_html=True)
-    for day, cases in schedule.items():
-        st.markdown(f"<div class='day-column'><h4>{day}</h4>", unsafe_allow_html=True)
-        if not cases:
-            st.markdown("<p style='font-size:13px;opacity:0.6;'>No cases scheduled</p>", unsafe_allow_html=True)
-        for r in cases:
-            level_class = "high" if r["Urgency_Level"]=="High" else (
-                          "medium" if r["Urgency_Level"]=="Medium" else "low")
-            st.markdown(f"""
-            <div class="case-card {level_class}">
-                <b>{r["Case_ID"]}</b> — {r["Case_Type"]}<br>
-                <span style='font-size:13px'>{r["Short_Description"]}</span><br>
-                <span style='font-size:11px;opacity:0.7'>
-                    Score: {r["Urgency_Score"]} | Deadline: {r["Deadline_Days_Left"]} days
-                </span>
-            </div>
-            """, unsafe_allow_html=True)
-        st.markdown("</div>", unsafe_allow_html=True)
-    st.markdown("</div>", unsafe_allow_html=True)
-
-    st.success("Calendar simulation ready — scroll horizontally to explore all days.")
-    st.caption("Return to Dashboard using sidebar navigation.")
