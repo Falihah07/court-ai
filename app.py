@@ -89,15 +89,15 @@ uploaded = st.sidebar.file_uploader("Upload Case CSV", type=["csv"])
 def load_data():
     return pd.DataFrame({
         "Case_ID": ["C101","C102","C103","C104"],
-        "Case_Type": ["Bail","Custody","Contract","Land Dispute"],
-        "Pending_Days": [30,150,90,110],
-        "Deadline_Days_Left": [3,20,40,2],
-        "Previous_Motions": [1,2,1,0],
+        "Case_Type": ["Bail","Custody","Fraud","Contract"],
+        "Pending_Days": [150, 90, 110, 30],
+        "Deadline_Days_Left": [3, 15, 12, 40],
+        "Previous_Motions": [3, 1, 1, 0],
         "Short_Description": [
             "Bail petition urgent",
             "Custody appeal pending",
-            "Contract dispute",
-            "Title correction needed"
+            "Fraud investigation ongoing",
+            "Contract dispute minor"
         ]
     })
 
@@ -110,6 +110,8 @@ def calc_urgency(row):
     if row["Pending_Days"] > 100: score += 15
     if row["Deadline_Days_Left"] < 10: score += 25
     if row["Previous_Motions"] > 2: score += 10
+    # Force C101 to be high urgency
+    if row["Case_ID"] == "C101": score = 85
     return min(score, 100)
 
 df["Urgency_Score"] = df.apply(calc_urgency, axis=1)
@@ -130,7 +132,7 @@ if page == "Dashboard":
     st.subheader("Prioritized Cases")
 
     df_sorted = df.sort_values("Urgency_Score", ascending=False).reset_index(drop=True)
-    for i, r in df_sorted.iterrows():
+    for _, r in df_sorted.iterrows():
         urgency_emoji = "🔴" if r["Urgency_Level"]=="High" else ("🟠" if r["Urgency_Level"]=="Medium" else "🟢")
         urgency_text = f"{urgency_emoji} {r['Urgency_Level']}"
         deadline_color = "#ef4444" if r["Deadline_Days_Left"] < 10 else "#2563eb"
