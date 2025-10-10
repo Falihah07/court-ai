@@ -158,30 +158,48 @@ if page == "Dashboard":
 
 
 # -------------------- CALENDAR VIEW --------------------
-# Auto-wrap layout for better spacing — prevents cards from clipping
-cols_per_row = 5
-days_list = list(schedule.items())
+elif page == "Calendar View":
+    st.markdown('<div class="title-gradient">📅 Case Calendar View</div>', unsafe_allow_html=True)
+    st.write("Visualized scheduled cases with color-coded urgency bars.")
 
-for row_start in range(0, len(days_list), cols_per_row):
-    row_days = days_list[row_start:row_start + cols_per_row]
-    cols = st.columns(len(row_days))
+    start = datetime.today()
+    days = [start + timedelta(days=i) for i in range(7)]
+    schedule = {d.strftime("%a %d %b"): [] for d in days}
+    df_sorted = df.sort_values("Urgency_Score", ascending=False).reset_index(drop=True)
 
-    for i, (day, cases) in enumerate(row_days):
+    day_index = 0
+    for _, row in df_sorted.iterrows():
+        day_key = list(schedule.keys())[day_index % len(days)]
+        schedule[day_key].append(row)
+        day_index += 1
+
+    cols = st.columns(len(schedule))
+    for i, (day, cases) in enumerate(schedule.items()):
         with cols[i]:
-            st.markdown(f"### {day}")
-            if not cases:
-                st.write("_No cases scheduled_")
+            st.markdown(f'<div class="day-card"><h4>{day}</h4></div>', unsafe_allow_html=True)
             for r in cases:
-                level_class = "high" if r["Urgency_Level"] == "High" else (
-                              "medium" if r["Urgency_Level"] == "Medium" else "low")
+                level_class = r["Urgency_Level"].lower()
+                urgency_emoji = "🔴" if r["Urgency_Level"]=="High" else ("🟠" if r["Urgency_Level"]=="Medium" else "🟢")
+                urgency_text = f"{urgency_emoji} {r['Urgency_Level']}"
+                deadline_color = "#ef4444" if r["Deadline_Days_Left"] < 10 else "#2563eb"
+
                 st.markdown(f"""
                 <div class="case-card {level_class}">
-                    <b>{r["Case_ID"]}</b> — {r["Case_Type"]}<br>
-                    <span style='font-size:13px'>{r["Short_Description"]}</span><br>
-                    <span style='font-size:11px;opacity:0.7'>
-                        Score: {r["Urgency_Score"]} | Deadline: {r["Deadline_Days_Left"]} days
+                    <b>{r['Case_ID']} — {r['Case_Type']}</b><br>
+                    <span style='font-size:13px'>{r['Short_Description']}</span><br>
+                    <span style='font-size:12px;'>
+                        <span style="background:{deadline_color};color:white;padding:2px 6px;border-radius:8px;margin-right:5px;">
+                            📅 {r['Deadline_Days_Left']} days left
+                        </span>
+                        <span style="background:#6b21a8;color:white;padding:2px 6px;border-radius:8px;">
+                            ⚖️ {r['Previous_Motions']} motions
+                        </span>
                     </span>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width:{r['Urgency_Score']}%"></div>
+                    </div>
+                    <span style='font-size:12px;opacity:0.7'>Urgency: {urgency_text}</span>
                 </div>
                 """, unsafe_allow_html=True)
 
-
+    st.success("Calendar simulation ready — each card represents a scheduled case.")
