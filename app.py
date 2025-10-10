@@ -1,206 +1,102 @@
 import streamlit as st
-import pandas as pd
-from datetime import datetime, timedelta
+import random
 
-# -------------------- PAGE SETUP --------------------
-st.set_page_config(
-    page_title="AI-Powered Justice System",
-    layout="wide"
-)
+# --- PAGE CONFIG ---
+st.set_page_config(page_title="HackElite 2025 Dashboard", page_icon="⚡", layout="wide")
 
-# -------------------- CUSTOM CSS --------------------
+# --- CUSTOM STYLES ---
 st.markdown("""
-<style>
-/* ----------------- Global Styles ----------------- */
-body, .stApp, .stSidebar { font-family: 'Segoe UI', sans-serif; }
+    <style>
+        /* General page styling */
+        body {
+            color: black;
+            background-color: white;
+            font-family: 'Poppins', sans-serif;
+        }
+        .main {
+            padding: 2rem;
+        }
+        h1, h2, h3, h4 {
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
 
-/* Gradient Title */
-.title-gradient {
-    background: linear-gradient(90deg, #2563eb, #6b21a8);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    font-size: 40px;
-    font-weight: 700;
-}
-.subtitle { font-size: 18px; color: #555; margin-bottom: 20px; }
+        /* Fancy title animation */
+        .title {
+            font-size: 2.8rem;
+            text-align: center;
+            font-weight: 700;
+            background: linear-gradient(90deg, #00C9A7, #92FE9D);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: glow 3s infinite alternate;
+        }
 
-/* Metric Cards */
-.metric-card {
-    background-color: #ffffff;
-    border-radius: 15px;
-    padding: 20px;
-    text-align: center;
-    box-shadow: 0 6px 12px rgba(0,0,0,0.1);
-    transition: transform 0.2s;
-}
-.metric-card:hover { transform: translateY(-5px); }
+        @keyframes glow {
+            from { text-shadow: 0 0 5px #00C9A7; }
+            to { text-shadow: 0 0 15px #92FE9D; }
+        }
 
-/* Case Cards */
-.case-card {
-    padding: 15px;
-    margin-bottom: 12px;
-    border-radius: 12px;
-    box-shadow: 0px 4px 12px rgba(0,0,0,0.1);
-    border-left: 6px solid;
-    background-color: #ffffff;
-    transition: transform 0.2s, box-shadow 0.2s;
-}
-.case-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0px 8px 18px rgba(0,0,0,0.15);
-}
+        /* Case card styling */
+        .case-card {
+            border-radius: 20px;
+            padding: 20px;
+            margin: 10px 0;
+            color: black;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            transition: all 0.3s ease-in-out;
+        }
 
-/* Urgency Colors */
-.high {border-left-color:#ef4444;}
-.medium {border-left-color:#f59e0b;}
-.low {border-left-color:#10b981;}
+        .case-card:hover {
+            transform: scale(1.02);
+            box-shadow: 0 8px 18px rgba(0,0,0,0.15);
+        }
 
-/* Progress Bar */
-.progress-bar { height: 6px; border-radius: 3px; background-color: #e0e0e0; margin-top: 8px; margin-bottom: 5px; }
-.progress-fill { height: 6px; border-radius: 3px; background: linear-gradient(90deg, #2563eb, #6b21a8); }
+        /* Case colors */
+        .case-green { background: #E8F8F5; border-left: 6px solid #1ABC9C; }
+        .case-yellow { background: #FEF9E7; border-left: 6px solid #F1C40F; }
+        .case-red { background: #FDEDEC; border-left: 6px solid #E74C3C; }
 
-/* Calendar Day Cards */
-.day-card {
-    border-radius: 15px;
-    padding: 10px;
-    margin-bottom: 12px;
-    background-color: #f5f5f5;
-    box-shadow: 0px 4px 10px rgba(0,0,0,0.1);
-    transition: transform 0.2s;
-}
-.day-card:hover { transform: translateY(-2px); }
-
-/* Dark Mode */
-@media (prefers-color-scheme: dark) {
-    body, .stApp, .stSidebar { color: #f1f1f1; }
-    .metric-card, .case-card, .day-card { background-color: #1e1e1e !important; color: #f1f1f1 !important; box-shadow: 0px 4px 12px rgba(0,0,0,0.5); }
-    .progress-bar { background-color: #333; }
-}
-</style>
+        /* Status badge */
+        .badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 10px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: white;
+        }
+        .badge-green { background: #1ABC9C; }
+        .badge-yellow { background: #F1C40F; color: black; }
+        .badge-red { background: #E74C3C; }
+    </style>
 """, unsafe_allow_html=True)
 
-# -------------------- SIDEBAR --------------------
-st.sidebar.title("Navigation")
-page = st.sidebar.radio("Select View:", ["Dashboard", "Calendar View"])
-st.sidebar.markdown("---")
-uploaded = st.sidebar.file_uploader("Upload Case CSV", type=["csv"])
+# --- HEADER ---
+st.markdown("<h1 class='title'>⚡ HackElite 2025 - Case Dashboard</h1>", unsafe_allow_html=True)
+st.markdown("### Showcasing your sleek UI design and professional dashboard skills ✨")
+st.markdown("---")
 
-# -------------------- DATA --------------------
-def load_data():
-    return pd.DataFrame({
-        "Case_ID": ["C101","C102","C103","C104","C105","C106"],
-        "Case_Type": ["Bail","Custody","Fraud","Contract","Land Dispute","Bail"],
-        "Pending_Days": [30,150,240,90,110,10],
-        "Deadline_Days_Left": [3,20,5,40,2,60],
-        "Previous_Motions": [1,2,3,1,0,0],
-        "Short_Description": [
-            "Bail petition urgent",
-            "Custody appeal pending",
-            "Fraud investigation",
-            "Contract dispute",
-            "Title correction needed",
-            "Bail - new application"
-        ]
-    })
+# --- SAMPLE CASES ---
+cases = [
+    {"id": "C101", "title": "AI-Powered Waste Sorting", "desc": "Automated waste segregation using AI vision.", "status": "Completed", "color": "green"},
+    {"id": "C102", "title": "Smart Water Management", "desc": "IoT system for water conservation and monitoring.", "status": "In Progress", "color": "yellow"},
+    {"id": "C103", "title": "AR Campus Navigation", "desc": "Augmented Reality navigation for college events.", "status": "In Progress", "color": "yellow"},
+    {"id": "C104", "title": "Cyber Threat Detection", "desc": "AI-driven system for anomaly detection in networks.", "status": "Pending", "color": "red"},
+]
 
-df = pd.read_csv(uploaded) if uploaded else load_data()
-
-# -------------------- URGENCY --------------------
-def calc_urgency(row):
-    score = 0
-    if row["Case_Type"] in ["Bail","Custody","Fraud"]: score += 40
-    if row["Pending_Days"] > 100: score += 15
-    if row["Deadline_Days_Left"] < 10: score += 25
-    if row["Previous_Motions"] > 2: score += 10
-    return min(score, 100)
-
-df["Urgency_Score"] = df.apply(calc_urgency, axis=1)
-df["Urgency_Level"] = df["Urgency_Score"].apply(lambda x: "High" if x>=70 else ("Medium" if x>=40 else "Low"))
-
-# -------------------- DASHBOARD --------------------
-if page == "Dashboard":
-    st.markdown('<div class="title-gradient">⚖️ AI-Powered Justice System</div>', unsafe_allow_html=True)
-    st.markdown('<div class="subtitle">Prioritize court cases with intelligence and style.</div>', unsafe_allow_html=True)
-
-    # Metrics
-    col1, col2, col3 = st.columns(3)
-    col1.markdown(f'<div class="metric-card"><h3>Total Cases</h3><h2>{len(df)}</h2></div>', unsafe_allow_html=True)
-    col2.markdown(f'<div class="metric-card"><h3>High Urgency</h3><h2>{int((df["Urgency_Level"]=="High").sum())}</h2></div>', unsafe_allow_html=True)
-    col3.markdown(f'<div class="metric-card"><h3>Average Score</h3><h2>{round(df["Urgency_Score"].mean(),1)}</h2></div>', unsafe_allow_html=True)
-
-    st.markdown("---")
-    st.subheader("Prioritized Cases")
-
-    df_sorted = df.sort_values("Urgency_Score", ascending=False).reset_index(drop=True)
-    for i, r in df_sorted.iterrows():
-        # Urgency badge
-        urgency_emoji = "🔴" if r["Urgency_Level"]=="High" else ("🟠" if r["Urgency_Level"]=="Medium" else "🟢")
-        urgency_text = f"{urgency_emoji} {r['Urgency_Level']}"
-        # Deadline badge color
-        deadline_color = "#ef4444" if r["Deadline_Days_Left"] < 10 else "#2563eb"
-
+# --- DISPLAY CASES ---
+cols = st.columns(2)
+for i, case in enumerate(cases):
+    with cols[i % 2]:
         st.markdown(f"""
-        <div class="case-card {r['Urgency_Level'].lower()}">
-            <b>{r['Case_ID']} — {r['Case_Type']}</b><br>
-            <span style='font-size:14px'>{r['Short_Description']}</span><br>
-            <span style='font-size:12px;'>
-                <span style="background:{deadline_color};color:white;padding:2px 6px;border-radius:8px;margin-right:5px;">
-                    📅 {r['Deadline_Days_Left']} days left
-                </span>
-                <span style="background:#6b21a8;color:white;padding:2px 6px;border-radius:8px;">
-                    ⚖️ {r['Previous_Motions']} motions
-                </span>
-            </span>
-            <div class="progress-bar">
-                <div class="progress-fill" style="width:{r['Urgency_Score']}%"></div>
+            <div class="case-card case-{case['color']}">
+                <h3>{case['id']} — {case['title']}</h3>
+                <p>{case['desc']}</p>
+                <span class="badge badge-{case['color']}">{case['status']}</span>
             </div>
-            <span style='font-size:12px;opacity:0.7'>Urgency: {urgency_text}</span>
-        </div>
         """, unsafe_allow_html=True)
 
-# -------------------- CALENDAR VIEW --------------------
-elif page == "Calendar View":
-    st.markdown('<div class="title-gradient">📅 Case Calendar View</div>', unsafe_allow_html=True)
-    st.write("Visualized scheduled cases with color-coded urgency bars.")
+st.markdown("---")
+st.markdown("💡 **Tip:** You can make this dashboard fully interactive — filter by status, add animations, or even integrate live hackathon data!")
 
-    start = datetime.today()
-    days = [start + timedelta(days=i) for i in range(7)]
-    schedule = {d.strftime("%a %d %b"): [] for d in days}
-    df_sorted = df.sort_values("Urgency_Score", ascending=False).reset_index(drop=True)
-
-    day_index = 0
-    for _, row in df_sorted.iterrows():
-        day_key = list(schedule.keys())[day_index % len(days)]
-        schedule[day_key].append(row)
-        day_index += 1
-
-    cols = st.columns(len(schedule))
-    for i, (day, cases) in enumerate(schedule.items()):
-        with cols[i]:
-            st.markdown(f'<div class="day-card"><h4>{day}</h4></div>', unsafe_allow_html=True)
-            for r in cases:
-                level_class = r["Urgency_Level"].lower()
-                urgency_emoji = "🔴" if r["Urgency_Level"]=="High" else ("🟠" if r["Urgency_Level"]=="Medium" else "🟢")
-                urgency_text = f"{urgency_emoji} {r['Urgency_Level']}"
-                deadline_color = "#ef4444" if r["Deadline_Days_Left"] < 10 else "#2563eb"
-
-                st.markdown(f"""
-                <div class="case-card {level_class}">
-                    <b>{r['Case_ID']} — {r['Case_Type']}</b><br>
-                    <span style='font-size:13px'>{r['Short_Description']}</span><br>
-                    <span style='font-size:12px;'>
-                        <span style="background:{deadline_color};color:white;padding:2px 6px;border-radius:8px;margin-right:5px;">
-                            📅 {r['Deadline_Days_Left']} days left
-                        </span>
-                        <span style="background:#6b21a8;color:white;padding:2px 6px;border-radius:8px;">
-                            ⚖️ {r['Previous_Motions']} motions
-                        </span>
-                    </span>
-                    <div class="progress-bar">
-                        <div class="progress-fill" style="width:{r['Urgency_Score']}%"></div>
-                    </div>
-                    <span style='font-size:12px;opacity:0.7'>Urgency: {urgency_text}</span>
-                </div>
-                """, unsafe_allow_html=True)
-
-    st.success("Calendar simulation ready — each card represents a scheduled case.")
