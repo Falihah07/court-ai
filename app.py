@@ -1,6 +1,5 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
 from datetime import datetime, timedelta
 
 # -------------------- PAGE SETUP --------------------
@@ -12,7 +11,6 @@ st.set_page_config(
 # -------------------- CUSTOM CSS --------------------
 st.markdown("""
 <style>
-/* Adaptive light/dark mode */
 :root {
   --primary: #2563eb;
   --bg-light: #f7faff;
@@ -21,19 +19,17 @@ st.markdown("""
   --text-dark: #f7faff;
 }
 
-/* Main App Container */
+/* App container */
 [data-testid="stAppViewContainer"] {
   background: var(--bg-light);
-  color: var(--text-light) !important;
+  color: var(--text-light);
   font-family: 'Segoe UI', sans-serif;
   transition: all 0.3s ease;
 }
-
-/* Dark Mode */
 @media (prefers-color-scheme: dark) {
   [data-testid="stAppViewContainer"] {
     background: var(--bg-dark);
-    color: var(--text-dark) !important;
+    color: var(--text-dark);
   }
 }
 
@@ -49,9 +45,9 @@ st.markdown("""
   }
 }
 
-/* Title Gradient Glow */
+/* Gradient glowing title */
 .glow-title {
-  font-size: 2.5rem;
+  font-size: 2.8rem;
   font-weight: 800;
   text-align: center;
   background: linear-gradient(90deg, #2563eb, #9333ea, #14b8a6);
@@ -67,16 +63,16 @@ st.markdown("""
 /* Case cards */
 .case-card {
   background-color: #ffffff;
-  border-left: 5px solid #2563eb;
-  padding: 10px;
-  margin-bottom: 8px;
-  border-radius: 12px;
-  box-shadow: 0px 3px 8px rgba(0,0,0,0.1);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  border-left: 5px solid var(--primary);
+  padding: 15px;
+  margin-bottom: 12px;
+  border-radius: 14px;
+  box-shadow: 0px 3px 10px rgba(0,0,0,0.1);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
 }
 .case-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0px 6px 15px rgba(0,0,0,0.15);
+  transform: translateY(-4px);
+  box-shadow: 0px 6px 20px rgba(0,0,0,0.15);
 }
 
 /* Urgency colors */
@@ -86,7 +82,7 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# -------------------- SIDEBAR NAVIGATION --------------------
+# -------------------- SIDEBAR --------------------
 st.sidebar.title("Navigation")
 page = st.sidebar.radio("Select View:", ["Dashboard", "Calendar View"])
 st.sidebar.markdown("---")
@@ -96,15 +92,15 @@ uploaded = st.sidebar.file_uploader("Upload Case CSV", type=["csv"])
 def load_data():
     return pd.DataFrame({
         "Case_ID": ["C101","C102","C103","C104"],
-        "Case_Type": ["Bail","Custody","Contract","Fraud"],
-        "Pending_Days": [30,150,90,240],
-        "Deadline_Days_Left": [3,20,40,5],
-        "Previous_Motions": [1,2,1,3],
+        "Case_Type": ["Fraud","Custody","Contract","Bail"],
+        "Pending_Days": [240,150,90,30],
+        "Deadline_Days_Left": [5,20,40,15],
+        "Previous_Motions": [3,2,1,0],
         "Short_Description": [
-            "Bail petition urgent",
+            "Fraud case – immediate attention",
             "Custody appeal pending",
             "Contract dispute under review",
-            "Fraud case – immediate attention"
+            "Bail petition new application"
         ]
     })
 
@@ -137,7 +133,20 @@ if page == "Dashboard":
 
     st.markdown("---")
     st.subheader("Prioritized Case List")
-    st.dataframe(df.sort_values("Urgency_Score", ascending=False), use_container_width=True)
+
+    # 🔥 Case cards visual (your beautiful UI restored)
+    for _, r in df.sort_values("Urgency_Score", ascending=False).iterrows():
+        level_class = "high" if r["Urgency_Level"]=="High" else (
+                      "medium" if r["Urgency_Level"]=="Medium" else "low")
+        st.markdown(f"""
+        <div class="case-card {level_class}">
+            <b>{r["Case_ID"]}</b> — {r["Case_Type"]}<br>
+            <span style='font-size:13px'>{r["Short_Description"]}</span><br>
+            <span style='font-size:12px;opacity:0.75'>
+                Score: {r["Urgency_Score"]} | Deadline: {r["Deadline_Days_Left"]} days | Motions: {r["Previous_Motions"]}
+            </span>
+        </div>
+        """, unsafe_allow_html=True)
 
     st.markdown("---")
     st.subheader("Urgency Summary")
@@ -175,7 +184,9 @@ elif page == "Calendar View":
                 <div class="case-card {level_class}">
                     <b>{r["Case_ID"]}</b> — {r["Case_Type"]}<br>
                     <span style='font-size:13px'>{r["Short_Description"]}</span><br>
-                    <span style='font-size:11px;opacity:0.7'>Score: {r["Urgency_Score"]} | Deadline: {r["Deadline_Days_Left"]} days</span>
+                    <span style='font-size:11px;opacity:0.7'>
+                        Score: {r["Urgency_Score"]} | Deadline: {r["Deadline_Days_Left"]} days
+                    </span>
                 </div>
                 """, unsafe_allow_html=True)
 
