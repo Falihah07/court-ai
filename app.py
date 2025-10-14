@@ -1,4 +1,4 @@
-# app.py — AI-Powered Justice System (Enhanced UI + Smart Scheduling)
+# app.py — AI-Powered Justice System (Futuristic Neon Glass UI + Smart Scheduling)
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -9,10 +9,12 @@ import math
 # -------------------- PAGE SETUP --------------------
 st.set_page_config(
     page_title="AI-Powered Justice System",
-    layout="wide"
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
 
 # -------------------- SECURITY --------------------
+# NOTE: demo-only: generate key each run. Store securely in production.
 key = Fernet.generate_key()
 cipher = Fernet(key)
 
@@ -25,144 +27,168 @@ def decrypt_data(encrypted_data):
     from io import StringIO
     return pd.read_csv(StringIO(decrypted))
 
-# -------------------- CUSTOM CSS (Enhanced Look) --------------------
+# -------------------- GLOBAL STYLES (Neon Glass) --------------------
 st.markdown("""
 <style>
-body, .stApp, .stSidebar {
-    font-family: 'Segoe UI', sans-serif;
-    color: #f3f4f6;
-    background: radial-gradient(circle at top left, #0f172a 0%, #111827 100%);
+:root{
+  --glass-bg: rgba(11,14,22,0.55);
+  --glass-border: rgba(255,255,255,0.06);
+  --accent1: #60a5fa;
+  --accent2: #a855f7;
+  --accent3: #ec4899;
+  --muted: #9ca3af;
+  --card-radius: 16px;
 }
+
+/* page background */
+body, .stApp {
+  background: radial-gradient(circle at 10% 10%, #071129 0%, #05060a 50%, #040407 100%);
+  color: #e6eef8;
+  font-family: "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial;
+}
+
+/* title gradient */
 .title-gradient {
-    background: linear-gradient(90deg, #60a5fa, #c084fc, #ec4899);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    font-size: 42px;
-    font-weight: 800;
-    text-shadow: 0 2px 8px rgba(99,102,241,0.5);
+  background: linear-gradient(90deg, var(--accent1), var(--accent2), var(--accent3));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-weight: 800;
+  font-size: 42px;
+  letter-spacing: -0.6px;
+  text-shadow: 0 8px 28px rgba(168,85,247,0.08);
 }
+
+/* subtitle */
 .subtitle {
-    font-size: 18px;
-    color: #9ca3af;
-    margin-bottom: 22px;
-    letter-spacing: 0.3px;
+  color: var(--muted);
+  margin-bottom: 18px;
+  font-size: 15px;
 }
+
+/* neon glass container (used for dashboard & calendar sections) */
+.glass {
+  background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.02));
+  border: 1px solid rgba(255,255,255,0.04);
+  box-shadow: 0 6px 30px rgba(99,102,241,0.06);
+  backdrop-filter: blur(10px) saturate(140%);
+  -webkit-backdrop-filter: blur(10px) saturate(140%);
+  border-radius: var(--card-radius);
+  padding: 18px;
+}
+
+/* header row */
+.header-row{
+  display:flex; align-items:center; gap:14px;
+}
+
+/* small svg icon circle */
+.icon-circle {
+  width:56px; height:56px; border-radius:12px;
+  display:flex; align-items:center; justify-content:center;
+  background: linear-gradient(135deg, rgba(96,165,250,0.08), rgba(168,85,247,0.06));
+  border: 1px solid rgba(255,255,255,0.04);
+  box-shadow: 0 6px 18px rgba(99,102,241,0.08), inset 0 -6px 14px rgba(0,0,0,0.2);
+}
+
+/* metric cards */
+.metric-row { display:flex; gap:16px; }
 .metric-card {
-    background: linear-gradient(145deg, #1f2937, #0f172a);
-    border-radius: 18px;
-    padding: 28px;
-    text-align: center;
-    box-shadow: 0 8px 22px rgba(0,0,0,0.55);
-    transition: all 0.25s ease-in-out;
+  flex:1;
+  border-radius:14px;
+  padding:18px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+  border: 1px solid rgba(255,255,255,0.03);
+  box-shadow: 0 8px 30px rgba(99,102,241,0.06);
+  transition: transform .22s ease, box-shadow .22s ease;
 }
-.metric-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 12px 28px rgba(59,130,246,0.25);
+.metric-card:hover { transform: translateY(-6px); box-shadow: 0 18px 50px rgba(99,102,241,0.12); }
+.metric-card h3 { margin:0; color: #cfe3ff; font-weight:700; font-size:13px; letter-spacing:0.2px; }
+.metric-card h2 { margin:8px 0 0 0; font-size:28px; font-weight:800; color:white; }
+
+/* neon stat icon */
+.stat-icon {
+  float:right;
+  opacity:0.95;
 }
-.metric-card h3 { color: #a5b4fc; font-weight: 600; margin-bottom: 8px; }
-.metric-card h2 { color: #fff; font-size: 36px; margin: 0; text-shadow: 0 2px 8px rgba(255,255,255,0.2); }
+
+/* case card (dashboard & calendar) */
 .case-card {
-    padding: 18px;
-    margin-bottom: 18px;
-    border-radius: 14px;
-    background: rgba(17,24,39,0.95);
-    box-shadow: 0 4px 14px rgba(0,0,0,0.6);
-    border-left: 6px solid;
-    transition: all 0.2s ease;
-    position: relative;
+  border-radius:12px;
+  padding:14px;
+  margin-top:12px;
+  position:relative;
+  overflow:hidden;
+  border:1px solid rgba(255,255,255,0.03);
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+  transition: transform .18s ease, box-shadow .18s ease;
 }
-.case-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0px 8px 20px rgba(99,102,241,0.3);
+.case-card:hover { transform: translateY(-4px); box-shadow: 0 10px 30px rgba(99,102,241,0.08); }
+
+/* left urgency stripe + glow */
+.case-card .left-stripe {
+  position:absolute; left:0; top:0; bottom:0; width:8px; border-radius:8px 0 0 8px;
+  box-shadow: 0 6px 20px rgba(168,85,247,0.06), inset 0 6px 18px rgba(0,0,0,0.2);
 }
-.case-card::before {
-    content: "";
-    position: absolute;
-    left: -6px;
-    top: 0;
-    height: 100%;
-    width: 6px;
-    border-radius: 6px 0 0 6px;
-}
-.high::before { background: linear-gradient(180deg,#f87171,#ef4444); }
-.medium::before { background: linear-gradient(180deg,#fbbf24,#f59e0b); }
-.low::before { background: linear-gradient(180deg,#34d399,#10b981); }
+.high-stripe { background: linear-gradient(180deg,#ff7b7b,#ef4444); box-shadow: 0 0 18px rgba(239,68,68,0.14); }
+.medium-stripe { background: linear-gradient(180deg,#ffd36b,#f59e0b); box-shadow: 0 0 18px rgba(245,158,11,0.12); }
+.low-stripe { background: linear-gradient(180deg,#73f3b6,#10b981); box-shadow: 0 0 18px rgba(16,185,129,0.12); }
+
+/* progress bar (animated) */
 .progress-bar {
-    height: 8px;
-    border-radius: 6px;
-    background-color: #1f2937;
-    margin-top: 12px;
-    margin-bottom: 6px;
-    overflow: hidden;
+  height:10px; border-radius:10px; overflow:hidden; background: rgba(255,255,255,0.03); margin-top:10px;
+  border: 1px solid rgba(255,255,255,0.02);
 }
 .progress-fill {
-    height: 8px;
-    border-radius: 6px;
-    background: linear-gradient(90deg, #3b82f6, #a855f7, #ec4899);
-    box-shadow: 0 0 6px rgba(168,85,247,0.4);
+  height:100%; width:0%;
+  background: linear-gradient(90deg, var(--accent1), var(--accent2), var(--accent3));
+  box-shadow: 0 6px 28px rgba(168,85,247,0.12);
+  border-radius:10px;
+  animation: fillAnim 1.1s ease forwards;
 }
-.day-card {
-    border-radius: 14px;
-    padding: 12px;
-    margin-bottom: 18px;
-    background: linear-gradient(145deg, rgba(31,41,55,0.9), rgba(17,24,39,0.9));
-    box-shadow: 0px 4px 12px rgba(0,0,0,0.5);
-    transition: all 0.2s ease;
+@keyframes fillAnim { from { width: 0%; } to { width: var(--fill-width); } }
+
+/* small meta badges */
+.meta-badge {
+  display:inline-block; font-size:12px; padding:6px 8px; border-radius:10px; margin-right:8px;
+  background: rgba(255,255,255,0.03); color:#e6eef8; border:1px solid rgba(255,255,255,0.02);
 }
-.day-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 18px rgba(99,102,241,0.25);
+
+/* urgency tags */
+.urgency-tag {
+  padding:6px 10px; border-radius:12px; font-weight:700; letter-spacing:0.3px; font-size:12px;
+  display:inline-block; margin-left:8px; color: #08101a;
 }
-.day-header {
-    padding: 10px 12px;
-    border-radius: 10px;
-    font-weight: 700;
-    font-size: 15px;
-    color: #0f1724;
-    background: linear-gradient(90deg,#bfdbfe,#ddd6fe,#fce7f3);
-    text-align: center;
-    box-shadow: inset 0 0 8px rgba(255,255,255,0.4);
+.urgency-high { background: linear-gradient(90deg,#ff9b9b,#ff6b6b); color:#11060a; box-shadow: 0 6px 24px rgba(239,68,68,0.14); }
+.urgency-medium { background: linear-gradient(90deg,#ffe08a,#ffb347); color:#11060a; box-shadow: 0 6px 22px rgba(245,158,11,0.12); }
+.urgency-low { background: linear-gradient(90deg,#9fffdc,#5df0a4); color:#02271a; box-shadow: 0 6px 22px rgba(16,185,129,0.12); }
+
+/* day column header for calendar */
+.day-column {
+  border-radius:12px; padding:12px; margin-bottom:12px;
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+  border:1px solid rgba(255,255,255,0.03);
+  text-align:center;
 }
-.expander .streamlit-expanderHeader { color: #e5e7eb !important; font-weight: 600 !important; }
-.stSidebar { background: linear-gradient(180deg, #111827, #0f172a); color: #d1d5db; }
-.stSidebar .css-1d391kg { color: #d1d5db; }
-.stButton>button {
-    background: linear-gradient(90deg,#2563eb,#6b21a8);
-    color: white;
-    border: none;
-    border-radius: 10px;
-    padding: 8px 20px;
-    font-weight: 600;
-    transition: all 0.25s ease;
+.day-column .day-title {
+  font-weight:800; font-size:16px; background: linear-gradient(90deg,var(--accent1),var(--accent2)); -webkit-background-clip:text; -webkit-text-fill-color:transparent;
 }
-.stButton>button:hover {
-    transform: scale(1.04);
-    box-shadow: 0 0 10px rgba(147,51,234,0.4);
-}
-@media (prefers-color-scheme: light) {
-    body, .stApp, .stSidebar {
-        color: #111827;
-        background: linear-gradient(180deg,#f9fafb,#f3f4f6);
-    }
-    .metric-card, .case-card, .day-card {
-        background-color: #ffffff !important;
-        color: #111827 !important;
-        box-shadow: 0px 4px 12px rgba(0,0,0,0.1);
-    }
-    .day-header {
-        color: #111827;
-        background: linear-gradient(90deg,#bfdbfe,#ddd6fe,#fce7f3);
-    }
-    .progress-bar { background-color: #e5e7eb; }
+
+/* sidebar tweaks */
+.stSidebar .css-1d391kg { color: #cbd7ee; }
+.stSidebar .stFileUploader { color: #cbd7ee; }
+.stButton>button { border-radius:10px; padding:8px 12px; font-weight:700; background: linear-gradient(90deg,var(--accent1),var(--accent2)); color:white; border:none; box-shadow: 0 8px 30px rgba(99,102,241,0.06); }
+
+/* responsive small screens */
+@media (max-width:900px) {
+  .metric-row { flex-direction: column; }
 }
 </style>
 """, unsafe_allow_html=True)
 
 # -------------------- SIDEBAR --------------------
-st.sidebar.title("Navigation")
+st.sidebar.markdown("<div style='display:flex;align-items:center;gap:10px'><div style='font-size:20px'>⚖️</div><div><b>AI-Powered Justice</b><div style='font-size:12px;color:#9ca3af'>Neon Glass UI</div></div></div>", unsafe_allow_html=True)
 page = st.sidebar.radio("Select View:", ["Dashboard", "Calendar View"])
 st.sidebar.markdown("---")
-
 MAX_UPLOAD_GB = 1
 uploaded = st.sidebar.file_uploader(f"Upload Case CSV (display limit: {MAX_UPLOAD_GB} GB)", type=["csv"])
 
@@ -186,7 +212,7 @@ else:
     if df.empty:
         st.sidebar.warning("No local cases.csv found or file empty.")
     else:
-        st.sidebar.info("📂 Using default internal dataset.")
+        st.sidebar.info("📂 Using default internal dataset (expected ~500 cases).")
 
 if not df.empty:
     encrypted_data = encrypt_data(df)
@@ -248,147 +274,107 @@ if not df.empty:
 
 # -------------------- DASHBOARD --------------------
 if page == "Dashboard":
-    st.markdown('<div class="title-gradient">⚖️ AI-Powered Justice System</div>', unsafe_allow_html=True)
-    st.markdown('<div class="subtitle">Prioritize court cases with intelligence and privacy protection.</div>', unsafe_allow_html=True)
+    st.markdown('<div class="header-row"><div class="icon-circle"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 2L15 8H9L12 2Z" fill="white" opacity="0.9"/></svg></div><div><div class="title-gradient">⚖️ AI-Powered Justice System</div><div class="subtitle">Prioritize court cases with intelligence & neon-grade privacy.</div></div></div>', unsafe_allow_html=True)
 
     if df.empty:
-        st.warning("No case data to display.")
+        st.warning("No case data to display. Upload a CSV or add a local cases.csv.")
     else:
-        col1, col2, col3 = st.columns(3)
-        col1.markdown(f'<div class="metric-card"><h3>Total Cases</h3><h2>{len(df)}</h2></div>', unsafe_allow_html=True)
-        col2.markdown(f'<div class="metric-card"><h3>High Urgency</h3><h2>{(df["Urgency_Level"]=="High").sum()}</h2></div>', unsafe_allow_html=True)
-        col3.markdown(f'<div class="metric-card"><h3>Average Score</h3><h2>{round(df["Urgency_Score"].mean(),1)}</h2></div>', unsafe_allow_html=True)
+        # metrics top row with icons
+        total_cases = len(df)
+        high_count = (df["Urgency_Level"]=="High").sum()
+        avg_score = round(df["Urgency_Score"].mean(),1)
 
-        st.markdown("---")
-        st.subheader("Prioritized Cases (all cases shown)")
+        st.markdown('<div class="glass">', unsafe_allow_html=True)
+        st.markdown(f"""
+            <div style="display:flex; gap:16px;" class="metric-row">
+                <div class="metric-card">
+                    <div style="display:flex;align-items:center;justify-content:space-between;">
+                        <div>
+                            <h3>📈 Total Cases</h3>
+                            <h2>{total_cases}</h2>
+                        </div>
+                        <div class="stat-icon" title="Total Cases" style="font-size:28px;">🗂️</div>
+                    </div>
+                </div>
+                <div class="metric-card">
+                    <div style="display:flex;align-items:center;justify-content:space-between;">
+                        <div>
+                            <h3>🔥 High Urgency</h3>
+                            <h2>{high_count}</h2>
+                        </div>
+                        <div class="stat-icon" title="High Urgency" style="font-size:28px;">🚨</div>
+                    </div>
+                </div>
+                <div class="metric-card">
+                    <div style="display:flex;align-items:center;justify-content:space-between;">
+                        <div>
+                            <h3>✨ Average Score</h3>
+                            <h2>{avg_score}</h2>
+                        </div>
+                        <div class="stat-icon" title="Average Urgency Score" style="font-size:28px;">🧠</div>
+                    </div>
+                </div>
+            </div>
+        """, unsafe_allow_html=True)
+
+        st.markdown("</div>", unsafe_allow_html=True)
+        st.markdown("<br>")
+
+        st.markdown('<div class="glass">', unsafe_allow_html=True)
+        st.markdown('<div style="display:flex;align-items:center;justify-content:space-between;"><h3 style="margin:0">📊 Prioritized Cases</h3><div style="color:#9ca3af;font-size:13px">Sorted by urgency score (desc)</div></div><hr style="opacity:0.04;margin-top:12px">', unsafe_allow_html=True)
+
         df_sorted = df.sort_values("Urgency_Score", ascending=False).reset_index(drop=True)
         for _, r in df_sorted.iterrows():
-            urgency_emoji = "🔴" if r["Urgency_Level"] == "High" else ("🟠" if r["Urgency_Level"] == "Medium" else "🟢")
-            urgency_text = f"{urgency_emoji} {r['Urgency_Level']}"
-            deadline_color = "#ef4444" if int(r.get("Deadline_Days_Left", 999)) < 10 else "#2563eb"
-            level_class = r['Urgency_Level'].lower()
-            header = f"{r.get('Case_ID','')} — {r.get('Case_Type','')}"
-            with st.expander(f"{header} ({urgency_text})", expanded=False):
-                st.markdown(f"""
-                <div class="case-card {level_class}">
-                    <b style="font-size:16px">{r.get('Case_ID','')} — {r.get('Case_Type','')}</b><br>
-                    <div style='font-size:14px;margin-top:6px'>{r.get('Short_Description', '')}</div>
-                    <div style='margin-top:10px'>
-                        <span style="background:{deadline_color};color:white;padding:4px 8px;border-radius:8px;margin-right:6px;">
-                            📅 {r.get('Deadline_Days_Left','N/A')} days left
-                        </span>
-                        <span style="background:#6b21a8;color:white;padding:4px 8px;border-radius:8px;">
-                            ⚖️ {r.get('Previous_Motions',0)} motions
-                        </span>
+            urgency = r["Urgency_Level"]
+            stripe_class = "high-stripe" if urgency=="High" else ("medium-stripe" if urgency=="Medium" else "low-stripe")
+            urgency_tag_class = "urgency-high" if urgency=="High" else ("urgency-medium" if urgency=="Medium" else "urgency-low")
+            deadline_color = "#ef4444" if int(r.get("Deadline_Days_Left", 999)) < 10 else "#60a5fa"
+            fill_pct = int(r['Urgency_Score']) if not pd.isna(r['Urgency_Score']) else 0
+
+            # each case block
+            st.markdown(f"""
+            <div class="case-card" style="margin-bottom:10px;">
+                <div class="left-stripe {stripe_class}"></div>
+                <div style="margin-left:14px;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;">
+                        <div>
+                            <b style="font-size:15px">{r.get('Case_ID','')} — {r.get('Case_Type','')}</b>
+                            <div style="font-size:13px;color:#bcd8ff;margin-top:6px">{r.get('Short_Description','')}</div>
+                        </div>
+                        <div style="text-align:right">
+                            <div class="{urgency_tag_class} urgency-tag">{urgency} </div>
+                            <div style="font-size:12px;color:#9ca3af;margin-top:8px">⏱ {r.get('Pending_Days',0)}d pending</div>
+                        </div>
                     </div>
-                    <div class="progress-bar"><div class="progress-fill" style="width:{r['Urgency_Score']}%"></div></div>
-                    <div style='font-size:12px;opacity:0.8;margin-top:6px'>Urgency: {urgency_text}</div>
+
+                    <div style="margin-top:10px;">
+                        <span class="meta-badge" style="background:{deadline_color};color:white;">📅 {r.get('Deadline_Days_Left','N/A')}d left</span>
+                        <span class="meta-badge">⚖️ {r.get('Previous_Motions',0)} motions</span>
+                    </div>
+
+                    <div class="progress-bar" style="--fill-width: {fill_pct}%;">
+                        <div class="progress-fill" style="--fill-width:{fill_pct}%;"></div>
+                    </div>
+                    <div style="font-size:12px;color:#9ca3af;margin-top:8px">Urgency Score: {fill_pct} • { 'High priority' if urgency=='High' else ('Needs attention' if urgency=='Medium' else 'Routine') }</div>
                 </div>
-                """, unsafe_allow_html=True)
+            </div>
+            """, unsafe_allow_html=True)
+
+        st.markdown("</div>", unsafe_allow_html=True)
 
 # -------------------- CALENDAR VIEW --------------------
 elif page == "Calendar View":
-    st.markdown('<div class="title-gradient">📅 Smart Case Calendar</div>', unsafe_allow_html=True)
-    st.write("AI-optimized scheduling — weekdays only, 10 AM–4 PM, with a 12:30–1:00 PM lunch break.")
+    st.markdown('<div style="display:flex;align-items:center;gap:12px"><div class="icon-circle"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="4" width="18" height="18" rx="2" fill="white" opacity="0.92"/></svg></div><div><div class="title-gradient">📅 Smart Case Calendar</div><div class="subtitle">Weekday scheduling • 10:00 AM – 4:00 PM • Lunch 12:30–1:00</div></div></div>', unsafe_allow_html=True)
 
-    # Custom enhanced CSS for Calendar View
-    st.markdown("""
-    <style>
-    /* Glass and neon glow aesthetics */
-    .calendar-container {
-        backdrop-filter: blur(20px) saturate(160%);
-        -webkit-backdrop-filter: blur(20px) saturate(160%);
-        background-color: rgba(17, 25, 40, 0.75);
-        border-radius: 24px;
-        padding: 28px;
-        box-shadow: 0 8px 30px rgba(0,0,0,0.45);
-        transition: all 0.3s ease;
-        margin-bottom: 30px;
-    }
-    .calendar-container:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 10px 35px rgba(147,51,234,0.35);
-    }
-    .day-header {
-        font-size: 20px;
-        font-weight: 700;
-        background: linear-gradient(90deg,#60a5fa,#a855f7,#ec4899);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        margin-bottom: 10px;
-        text-align: center;
-    }
-    .case-card {
-        background: rgba(255,255,255,0.05);
-        border: 1px solid rgba(255,255,255,0.1);
-        border-radius: 18px;
-        padding: 18px;
-        margin-top: 14px;
-        transition: all 0.3s ease;
-        position: relative;
-        overflow: hidden;
-    }
-    .case-card::before {
-        content: "";
-        position: absolute;
-        top: 0; left: 0;
-        width: 100%; height: 100%;
-        background: linear-gradient(120deg, rgba(59,130,246,0.2), rgba(147,51,234,0.15), rgba(236,72,153,0.2));
-        opacity: 0;
-        transition: opacity 0.3s ease;
-        z-index: 0;
-    }
-    .case-card:hover::before { opacity: 1; }
-    .case-card:hover { transform: translateY(-3px); box-shadow: 0 8px 22px rgba(99,102,241,0.3); }
-    .case-card-content { position: relative; z-index: 2; }
-    .high-border { border-left: 6px solid #f87171; }
-    .medium-border { border-left: 6px solid #fbbf24; }
-    .low-border { border-left: 6px solid #34d399; }
-    .progress-bar {
-        background-color: rgba(255,255,255,0.1);
-        height: 8px;
-        border-radius: 6px;
-        margin-top: 8px;
-        overflow: hidden;
-    }
-    .progress-fill {
-        height: 100%;
-        background: linear-gradient(90deg, #3b82f6, #a855f7, #ec4899);
-        box-shadow: 0 0 6px rgba(168,85,247,0.5);
-        border-radius: 6px;
-    }
-    .case-meta span {
-        display: inline-block;
-        font-size: 13px;
-        margin-top: 6px;
-        background: rgba(255,255,255,0.08);
-        color: #e5e7eb;
-        padding: 4px 10px;
-        border-radius: 8px;
-        margin-right: 6px;
-    }
-    .case-meta span.deadline { background: #ef4444; color: white; }
-    .case-meta span.motion { background: #6b21a8; color: white; }
-    .urgency-tag {
-        font-size: 13px;
-        padding: 2px 8px;
-        border-radius: 6px;
-        font-weight: 600;
-        display: inline-block;
-    }
-    .urgency-high { background: rgba(248,113,113,0.25); color: #fca5a5; }
-    .urgency-medium { background: rgba(251,191,36,0.25); color: #fcd34d; }
-    .urgency-low { background: rgba(52,211,153,0.25); color: #6ee7b7; }
-    </style>
-    """, unsafe_allow_html=True)
-
+    # calendar-level glass wrapper & styles integrated already above
     if df.empty:
         st.warning("No cases available to schedule.")
     else:
         total_cases = len(df)
-        st.info(f"Total cases to schedule: {total_cases}")
+        st.markdown(f'<div class="glass"><div style="display:flex;justify-content:space-between;align-items:center"><div style="font-weight:700">🗓️ Scheduling Overview</div><div style="color:#9ca3af">Total cases: {total_cases}</div></div></div>', unsafe_allow_html=True)
+        st.write("")
 
-        # Duration mapping by urgency
+        # durations by urgency in minutes
         duration_map = {"Low": 10, "Medium": 25, "High": 60}
 
         def next_weekday(date):
@@ -397,7 +383,7 @@ elif page == "Calendar View":
                 date += timedelta(days=1)
             return date
 
-        # Start scheduling at 10AM
+        # start scheduling at next available weekday 10:00 AM
         start_date = datetime.today()
         while start_date.weekday() >= 5:
             start_date += timedelta(days=1)
@@ -415,11 +401,13 @@ elif page == "Calendar View":
             case_start = current_time
             case_end = case_start + timedelta(minutes=duration)
 
+            # handle lunch overlap
             if case_start < lunch_end and case_end > lunch_start:
                 current_time = lunch_end
                 case_start = current_time
                 case_end = case_start + timedelta(minutes=duration)
 
+            # if exceed work hours, move to next weekday 10AM
             if case_end > end_time:
                 current_time = next_weekday(current_time).replace(hour=10, minute=0)
                 end_time = current_time.replace(hour=16, minute=0)
@@ -437,48 +425,54 @@ elif page == "Calendar View":
             current_time = case_end
 
         schedule_df = pd.DataFrame(schedule)
-        days = schedule_df["Date"].unique()
+        days = schedule_df["Date"].unique().tolist()
 
-        # Dynamic gradient colors
-        pastel_colors = ["#1e293b", "#111827", "#0f172a", "#1e1b4b", "#2d1b69"]
-
-        for i, day in enumerate(days):
+        # layout: show days in rows (wrap as needed)
+        for day in days:
             day_cases = schedule_df[schedule_df["Date"] == day]
-            st.markdown(
-                f"<div class='calendar-container'>"
-                f"<div class='day-header'>{day} — {len(day_cases)} cases</div>",
-                unsafe_allow_html=True
-            )
+            st.markdown(f'<div class="glass" style="margin-top:14px;"><div style="display:flex;justify-content:space-between;align-items:center"><div class="day-column"><div class="day-title">{day}</div></div><div style="color:#9ca3af">{len(day_cases)} cases</div></div>', unsafe_allow_html=True)
 
+            # print each case as a neon card
             for _, entry in day_cases.iterrows():
                 r = entry["Row"]
                 urgency = r["Urgency_Level"]
-                urgency_class = urgency.lower()
-                urgency_emoji = "🔴" if urgency == "High" else ("🟠" if urgency == "Medium" else "🟢")
-                border_class = "high-border" if urgency == "High" else ("medium-border" if urgency == "Medium" else "low-border")
-                deadline_color = "#ef4444" if int(r.get("Deadline_Days_Left", 999)) < 10 else "#2563eb"
+                stripe_class = "high-stripe" if urgency=="High" else ("medium-stripe" if urgency=="Medium" else "low-stripe")
+                urgency_tag_class = "urgency-high" if urgency=="High" else ("urgency-medium" if urgency=="Medium" else "urgency-low")
+                fill_pct = int(r['Urgency_Score']) if not pd.isna(r['Urgency_Score']) else 0
+                header = f"{r.get('Case_ID','')} — {r.get('Case_Type','')}"
 
-                header = f"{r.get('Case_ID','')} — {r.get('Case_Type','')} ({entry['Start']}–{entry['End']})"
-
-                with st.expander(f"{header} ({urgency_emoji} {urgency})", expanded=False):
-                    st.markdown(f"""
-                    <div class="case-card {border_class}">
-                        <div class="case-card-content">
-                            <b style="font-size:16px;">{r.get('Case_ID','')} — {r.get('Case_Type','')}</b><br>
-                            <div style="font-size:13px;opacity:0.85;margin-top:4px;">{r.get('Short_Description', r.get('Description',''))}</div>
-                            <div class="case-meta">
-                                <span class="deadline">📅 {r.get('Deadline_Days_Left','N/A')} days left</span>
-                                <span class="motion">⚖️ {r.get('Previous_Motions',0)} motions</span>
-                            </div>
-                            <div class="progress-bar"><div class="progress-fill" style="width:{r['Urgency_Score']}%"></div></div>
-                            <div style="font-size:12px;opacity:0.75;margin-top:6px;">
-                                Urgency: <span class="urgency-tag urgency-{urgency_class}">{urgency}</span>
-                                | Time: {entry['Start']} – {entry['End']}
-                            </div>
-                        </div>
+                st.markdown(f"""
+                <div class="case-card" style="margin-top:12px;">
+                  <div class="left-stripe {stripe_class}"></div>
+                  <div style="margin-left:14px;">
+                    <div style="display:flex;justify-content:space-between;align-items:center;">
+                      <div>
+                        <b style="font-size:15px">{header}</b>
+                        <div style="font-size:13px;color:#bcd8ff;margin-top:6px">{r.get('Short_Description','')}</div>
+                      </div>
+                      <div style="text-align:right">
+                        <div class="{urgency_tag_class} urgency-tag">{urgency}</div>
+                        <div style="font-size:12px;color:#9ca3af;margin-top:6px">⏰ {entry['Start']} — {entry['End']}</div>
+                      </div>
                     </div>
-                    """, unsafe_allow_html=True)
+
+                    <div style="margin-top:10px;">
+                      <span class="meta-badge" style="background:{('#ef4444' if int(r.get('Deadline_Days_Left',999))<10 else '#60a5fa')};color:white">📅 {r.get('Deadline_Days_Left','N/A')}d left</span>
+                      <span class="meta-badge">⚖️ {r.get('Previous_Motions',0)} motions</span>
+                    </div>
+
+                    <div class="progress-bar" style="--fill-width: {fill_pct}%;">
+                      <div class="progress-fill" style="--fill-width:{fill_pct}%;"></div>
+                    </div>
+
+                    <div style="font-size:12px;color:#9ca3af;margin-top:8px">Urgency Score: {fill_pct} • Duration: { ( '1 hr' if urgency=='High' else ( '25 min' if urgency=='Medium' else '10 min') ) }</div>
+                  </div>
+                </div>
+                """, unsafe_allow_html=True)
 
             st.markdown("</div>", unsafe_allow_html=True)
 
-        st.success("✅ Smart scheduling complete with modernized UI and urgency highlights.")
+        st.success("✅ Smart scheduling applied with Neon Glass UI — weekdays only, lunch respected.")
+
+# -------------------- FOOTER --------------------
+st.markdown('<div style="text-align:center;padding:18px;color:#9ca3af;font-size:13px">© 2025 Case Dashboard • Built with Streamlit • Neon Glass Mode</div>', unsafe_allow_html=True)
