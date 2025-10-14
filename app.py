@@ -361,12 +361,10 @@ if page == "Dashboard":
             """, unsafe_allow_html=True)
 
         st.markdown("</div>", unsafe_allow_html=True)
-
 # -------------------- CALENDAR VIEW --------------------
 elif page == "Calendar View":
     st.markdown('<div style="display:flex;align-items:center;gap:12px"><div class="icon-circle"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="4" width="18" height="18" rx="2" fill="white" opacity="0.92"/></svg></div><div><div class="title-gradient">📅 Smart Case Calendar</div><div class="subtitle">Weekday scheduling • 10:00 AM – 4:00 PM • Lunch 12:30–1:00</div></div></div>', unsafe_allow_html=True)
 
-    # calendar-level glass wrapper & styles integrated already above
     if df.empty:
         st.warning("No cases available to schedule.")
     else:
@@ -374,7 +372,6 @@ elif page == "Calendar View":
         st.markdown(f'<div class="glass"><div style="display:flex;justify-content:space-between;align-items:center"><div style="font-weight:700">🗓️ Scheduling Overview</div><div style="color:#9ca3af">Total cases: {total_cases}</div></div></div>', unsafe_allow_html=True)
         st.write("")
 
-        # durations by urgency in minutes
         duration_map = {"Low": 10, "Medium": 25, "High": 60}
 
         def next_weekday(date):
@@ -383,7 +380,6 @@ elif page == "Calendar View":
                 date += timedelta(days=1)
             return date
 
-        # start scheduling at next available weekday 10:00 AM
         start_date = datetime.today()
         while start_date.weekday() >= 5:
             start_date += timedelta(days=1)
@@ -401,13 +397,11 @@ elif page == "Calendar View":
             case_start = current_time
             case_end = case_start + timedelta(minutes=duration)
 
-            # handle lunch overlap
             if case_start < lunch_end and case_end > lunch_start:
                 current_time = lunch_end
                 case_start = current_time
                 case_end = case_start + timedelta(minutes=duration)
 
-            # if exceed work hours, move to next weekday 10AM
             if case_end > end_time:
                 current_time = next_weekday(current_time).replace(hour=10, minute=0)
                 end_time = current_time.replace(hour=16, minute=0)
@@ -427,12 +421,10 @@ elif page == "Calendar View":
         schedule_df = pd.DataFrame(schedule)
         days = schedule_df["Date"].unique().tolist()
 
-        # layout: show days in rows (wrap as needed)
         for day in days:
             day_cases = schedule_df[schedule_df["Date"] == day]
             st.markdown(f'<div class="glass" style="margin-top:14px;"><div style="display:flex;justify-content:space-between;align-items:center"><div class="day-column"><div class="day-title">{day}</div></div><div style="color:#9ca3af">{len(day_cases)} cases</div></div>', unsafe_allow_html=True)
 
-            # print each case as a neon card
             for _, entry in day_cases.iterrows():
                 r = entry["Row"]
                 urgency = r["Urgency_Level"]
@@ -441,6 +433,7 @@ elif page == "Calendar View":
                 fill_pct = int(r['Urgency_Score']) if not pd.isna(r['Urgency_Score']) else 0
                 header = f"{r.get('Case_ID','')} — {r.get('Case_Type','')}"
 
+                # ✅ FIXED EXPANDER CONTENT
                 st.markdown(f"""
                 <div class="case-card" style="margin-top:12px;">
                   <div class="left-stripe {stripe_class}"></div>
@@ -456,6 +449,7 @@ elif page == "Calendar View":
                       </div>
                     </div>
 
+                    <!-- FIXED EXPANDER UI -->
                     <div style="margin-top:10px;">
                       <span class="meta-badge" style="background:{('#ef4444' if int(r.get('Deadline_Days_Left',999))<10 else '#60a5fa')};color:white">📅 {r.get('Deadline_Days_Left','N/A')}d left</span>
                       <span class="meta-badge">⚖️ {r.get('Previous_Motions',0)} motions</span>
@@ -473,6 +467,3 @@ elif page == "Calendar View":
             st.markdown("</div>", unsafe_allow_html=True)
 
         st.success("✅ Smart scheduling applied with Neon Glass UI — weekdays only, lunch respected.")
-
-# -------------------- FOOTER --------------------
-st.markdown('<div style="text-align:center;padding:18px;color:#9ca3af;font-size:13px">© 2025 Case Dashboard • Built with Streamlit • Neon Glass Mode</div>', unsafe_allow_html=True)
