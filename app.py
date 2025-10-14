@@ -249,7 +249,7 @@ if page == "Dashboard":
 # -------------------- CALENDAR VIEW --------------------
 elif page == "Calendar View":
     st.markdown('<div class="title-gradient">📅 Case Calendar View</div>', unsafe_allow_html=True)
-    st.write("Weekly scheduling (Mon–Fri only). Weekends are skipped automatically.")
+    st.write("Smart scheduling with real-world time slots (10 AM – 4 PM, 12:30–1:00 PM lunch, weekdays only).")
 
     if df.empty:
         st.warning("No cases available to schedule.")
@@ -257,62 +257,97 @@ elif page == "Calendar View":
         total_cases = len(df)
         st.info(f"Total cases to schedule: {total_cases}")
 
-        # Determine next 5 weekdays
-        start = datetime.today()
-        weekdays = []
-        cur = start
-        while len(weekdays) < 5:
-            if cur.weekday() < 5:
-                weekdays.append(cur)
-            cur += timedelta(days=1)
-        weekday_keys = [d.strftime("%a %d %b") for d in weekdays]
+        # Define duration by urgency level (in minutes)
+        duration_map = {"Low": 10, "Medium": 25, "High": 60}
 
-        # Evenly split cases into 5 lists (as even as possible)
-        # For exactly 500 -> yields five lists of length 100.
-        per_day_base = total_cases // 5
-        remainder = total_cases % 5
-        splits = []
-        start_idx = 0
-        for i in range(5):
-            size = per_day_base + (1 if i < remainder else 0)
-            end_idx = start_idx + size
-            splits.append(df.sort_values("Urgency_Score", ascending=False).iloc[start_idx:end_idx].reset_index(drop=True))
-            start_idx = end_idx
+        # Function to get next weekday (skip Sat/Sun)
+        def next_weekday(date):
+            date += timedelta(days=1)
+            while date.weekday() >= 5:  # 5=Sat, 6=Sun
+                date += timedelta(days=1)
+            return date
 
+        # Start at 10 AM today (or next weekday if weekend)
+        start_date = datetime.today()
+        while start_date.weekday() >= 5:
+            start_date += timedelta(days=1)
+
+        current_time = start_date.replace(hour=10, minute=0, second=0, microsecond=0)
+        end_time = current_time.replace(hour=16, minute=0)
+        lunch_start = current_time.replace(hour=12, minute=30)
+        lunch_end = current_time.replace(hour=13, minute=0)
+
+        # Prepare schedule list
+        schedule = []
+        df_sorted = df.sort_values("Urgency_Score", ascending=False).reset_index(drop=True)
+
+        for _, row in df_sorted.iterrows():
+            duration = duration_map.get(row["Urgency_Level"], 10)
+            case_start = current_time
+            case_end = case_start + timedelta(minutes=duration)
+
+            # Skip lunch
+            if case_start < lunch_end and case_end > lunch_start:
+                current_time = lunch_end
+                case_start = current_time
+                case_end = case_start + timedelta(minutes=duration)
+
+            # If exceeds work hours, move to next weekday 10 AM
+            if case_end > end_time:
+                current_time = next_weekday(current_time).replace(hour=10, minute=0)
+                end_time = current_time.replace(hour=16, minute=0)
+                lunch_start = current_time.replace(hour=12, minute=30)
+                lunch_end = current_time.replace(hour=13, minute=0)
+                case_start = current_time
+                case_end = case_start + timedelta(minutes=duration)
+
+            # Save scheduled entry
+            schedule.append({
+                "Date": case_start.strftime("%a %d %b"),
+                "Start": case_start.strftime("%I:%M %p"),
+                "End": case_end.strftime("%I:%M %p"),
+                "Row": row
+            })
+            current_time = case_end
+
+        # Group by date for display
+        schedule_df = pd.DataFrame(schedule)
+        days = schedule_df["Date"].unique()
         pastel_colors = ["#dbeafe", "#e6f4ea", "#fff7e6", "#f3e5f5", "#e0f7fa"]
 
-        cols = st.columns(5)
-        for i, key in enumerate(weekday_keys):
-            with cols[i]:
-                # day header with pastel tint and dark text for clear separation
-                st.markdown(f'<div class="day-card" style="padding:8px;"><div class="day-header" style="background-color:{pastel_colors[i]};">{key} — {len(splits[i])} cases</div></div>', unsafe_allow_html=True)
-                if splits[i].empty:
-                    st.write("No cases assigned.")
-                else:
-                    for _, r in splits[i].iterrows():
-                        urgency_emoji = "🔴" if r["Urgency_Level"] == "High" else ("🟠" if r["Urgency_Level"] == "Medium" else "🟢")
-                        deadline_color = "#ef4444" if int(r.get("Deadline_Days_Left", 999)) < 10 else "#2563eb"
-                        level_class = r['Urgency_Level'].lower() if isinstance(r['Urgency_Level'], str) else ""
-                        header = f"{r.get('Case_ID','')} — {r.get('Case_Type','')}"
-                        with st.expander(f"{header} ({urgency_emoji} {r['Urgency_Level']})", expanded=False):
-                            st.markdown(f"""
-                            <div class="case-card {level_class}">
-                                <b>{r.get('Case_ID','')} — {r.get('Case_Type','')}</b><br>
-                                <div style='font-size:13px'>{r.get('Short_Description', r.get('Description',''))}</div>
-                                <div style='margin-top:8px;'>
-                                    <span style="background:{deadline_color};color:white;padding:4px 8px;border-radius:8px;margin-right:6px;">
-                                        📅 {r.get('Deadline_Days_Left','N/A')} days left
-                                    </span>
-                                    <span style="background:#6b21a8;color:white;padding:4px 8px;border-radius:8px;">
-                                        ⚖️ {r.get('Previous_Motions',0)} motions
-                                    </span>
-                                </div>
-                                <div class="progress-bar"><div class="progress-fill" style="width:{r['Urgency_Score']}%"></div></div>
-                                <div style='font-size:12px;opacity:0.8;margin-top:6px'>Urgency: {r['Urgency_Level']}</div>
-                            </div>
-                            """, unsafe_allow_html=True)
+        for i, day in enumerate(days):
+            day_cases = schedule_df[schedule_df["Date"] == day]
+            color = pastel_colors[i % len(pastel_colors)]
+            st.markdown(
+                f'<div class="day-card" style="padding:8px;"><div class="day-header" style="background-color:{color};">'
+                f"{day} — {len(day_cases)} cases</div></div>", unsafe_allow_html=True
+            )
 
-        st.success("✅ Calendar simulation: cases evenly distributed across next 5 weekdays (Mon–Fri).")
+            for _, entry in day_cases.iterrows():
+                r = entry["Row"]
+                urgency_emoji = "🔴" if r["Urgency_Level"] == "High" else ("🟠" if r["Urgency_Level"] == "Medium" else "🟢")
+                deadline_color = "#ef4444" if int(r.get("Deadline_Days_Left", 999)) < 10 else "#2563eb"
+                level_class = r['Urgency_Level'].lower() if isinstance(r['Urgency_Level'], str) else ""
+                header = f"{r.get('Case_ID','')} — {r.get('Case_Type','')} ({entry['Start']}–{entry['End']})"
 
-# -------------------- FOOTER --------------------
-st.markdown('<hr><p style="text-align:center; color:grey; font-size:12px;">© 2025 Case Dashboard | Built with Streamlit</p>', unsafe_allow_html=True)
+                with st.expander(f"{header} ({urgency_emoji} {r['Urgency_Level']})", expanded=False):
+                    st.markdown(f"""
+                    <div class="case-card {level_class}">
+                        <b>{r.get('Case_ID','')} — {r.get('Case_Type','')}</b><br>
+                        <div style='font-size:13px'>{r.get('Short_Description', r.get('Description',''))}</div>
+                        <div style='margin-top:8px;'>
+                            <span style="background:{deadline_color};color:white;padding:4px 8px;border-radius:8px;margin-right:6px;">
+                                📅 {r.get('Deadline_Days_Left','N/A')} days left
+                            </span>
+                            <span style="background:#6b21a8;color:white;padding:4px 8px;border-radius:8px;">
+                                ⚖️ {r.get('Previous_Motions',0)} motions
+                            </span>
+                        </div>
+                        <div class="progress-bar"><div class="progress-fill" style="width:{r['Urgency_Score']}%"></div></div>
+                        <div style='font-size:12px;opacity:0.8;margin-top:6px'>
+                            Urgency: {r['Urgency_Level']} | Time: {entry['Start']} – {entry['End']}
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
+
+        st.success("✅ Smart scheduling applied: weekdays only, with lunch break & urgency-based timing.")
