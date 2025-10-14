@@ -170,3 +170,149 @@ if not df.empty:
 # Ensure required columns exist (create reasonable defaults)
 if not df.empty:
     if 'Case_ID' not in df.columns:
+        df['Case_ID'] = df.index.to_series().apply(lambda x: f"C{x+1:03d}")
+    # ensure numeric columns exist
+    for col in ['Pending_Days','Deadline_Days_Left','Previous_Motions']:
+        if col not in df.columns:
+            df[col] = 0
+        df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0).astype(int)
+
+# -------------------- URGENCY SCORE (compute if not present) --------------------
+def calc_urgency_score(row):
+    # If there's a provided Urgency column with text, try to map to score
+    if pd.notna(row.get('Urgency')) and isinstance(row.get('Urgency'), str):
+        s = row.get('Urgency').strip().lower()
+        if s in ('high','h','urgent'): return 90
+        if s in ('medium','med','m'): return 55
+        if s in ('low','l'): return 15
+    # else compute heuristically from case type and numeric fields (fallback)
+    score = 0
+    ct = str(row.get('Case_Type','')).lower()
+    if ct in ['bail','custody','fraud']: score += 40
+    if row.get('Pending_Days',0) > 100: score += 15
+    if row.get('Deadline_Days_Left',999) < 10: score += 25
+    if row.get('Previous_Motions',0) > 2: score += 10
+    return min(100, score)
+
+if not df.empty:
+    if 'Urgency_Score' not in df.columns:
+        df['Urgency_Score'] = df.apply(calc_urgency_score, axis=1)
+    else:
+        df['Urgency_Score'] = pd.to_numeric(df['Urgency_Score'], errors='coerce').fillna(0).astype(int)
+
+    df['Urgency_Level'] = df['Urgency_Score'].apply(lambda x: "High" if x >= 70 else ("Medium" if x >= 40 else "Low"))
+
+# -------------------- DASHBOARD --------------------
+if page == "Dashboard":
+    st.markdown('<div class="title-gradient">⚖️ AI-Powered Justice System</div>', unsafe_allow_html=True)
+    st.markdown('<div class="subtitle">Prioritize court cases with intelligence and privacy protection.</div>', unsafe_allow_html=True)
+
+    if df.empty:
+        st.warning("No case data to display. Upload a CSV or add a local cases.csv.")
+    else:
+        col1, col2, col3 = st.columns(3)
+        col1.markdown(f'<div class="metric-card"><h3>Total Cases</h3><h2>{len(df)}</h2></div>', unsafe_allow_html=True)
+        col2.markdown(f'<div class="metric-card"><h3>High Urgency</h3><h2>{(df["Urgency_Level"]=="High").sum()}</h2></div>', unsafe_allow_html=True)
+        col3.markdown(f'<div class="metric-card"><h3>Average Score</h3><h2>{round(df["Urgency_Score"].mean(),1)}</h2></div>', unsafe_allow_html=True)
+
+        st.markdown("---")
+        st.subheader("Prioritized Cases (all cases shown)")
+
+        df_sorted = df.sort_values("Urgency_Score", ascending=False).reset_index(drop=True)
+
+        # Show all cases — use expanders like your original UI
+        for _, r in df_sorted.iterrows():
+            urgency_emoji = "🔴" if r["Urgency_Level"] == "High" else ("🟠" if r["Urgency_Level"] == "Medium" else "🟢")
+            urgency_text = f"{urgency_emoji} {r['Urgency_Level']}"
+            deadline_color = "#ef4444" if int(r.get("Deadline_Days_Left", 999)) < 10 else "#2563eb"
+            level_class = r['Urgency_Level'].lower() if isinstance(r['Urgency_Level'], str) else ""
+
+            header = f"{r.get('Case_ID','')} — {r.get('Case_Type','')}"
+            with st.expander(f"{header} ({urgency_text})", expanded=False):
+                st.markdown(f"""
+                <div class="case-card {level_class}">
+                    <b style="font-size:16px">{r.get('Case_ID','')} — {r.get('Case_Type','')}</b><br>
+                    <div style='font-size:14px;margin-top:6px'>{r.get('Short_Description', r.get('Description',''))}</div>
+                    <div style='margin-top:10px'>
+                        <span style="background:{deadline_color};color:white;padding:4px 8px;border-radius:8px;margin-right:6px;">
+                            📅 {r.get('Deadline_Days_Left','N/A')} days left
+                        </span>
+                        <span style="background:#6b21a8;color:white;padding:4px 8px;border-radius:8px;">
+                            ⚖️ {r.get('Previous_Motions',0)} motions
+                        </span>
+                    </div>
+                    <div class="progress-bar"><div class="progress-fill" style="width:{r['Urgency_Score']}%"></div></div>
+                    <div style='font-size:12px;opacity:0.8;margin-top:6px'>Urgency: {urgency_text}</div>
+                </div>
+                """, unsafe_allow_html=True)
+
+# -------------------- CALENDAR VIEW --------------------
+elif page == "Calendar View":
+    st.markdown('<div class="title-gradient">📅 Case Calendar View</div>', unsafe_allow_html=True)
+    st.write("Weekly scheduling (Mon–Fri only). Weekends are skipped automatically.")
+
+    if df.empty:
+        st.warning("No cases available to schedule.")
+    else:
+        total_cases = len(df)
+        st.info(f"Total cases to schedule: {total_cases}")
+
+        # Determine next 5 weekdays
+        start = datetime.today()
+        weekdays = []
+        cur = start
+        while len(weekdays) < 5:
+            if cur.weekday() < 5:
+                weekdays.append(cur)
+            cur += timedelta(days=1)
+        weekday_keys = [d.strftime("%a %d %b") for d in weekdays]
+
+        # Evenly split cases into 5 lists (as even as possible)
+        # For exactly 500 -> yields five lists of length 100.
+        per_day_base = total_cases // 5
+        remainder = total_cases % 5
+        splits = []
+        start_idx = 0
+        for i in range(5):
+            size = per_day_base + (1 if i < remainder else 0)
+            end_idx = start_idx + size
+            splits.append(df.sort_values("Urgency_Score", ascending=False).iloc[start_idx:end_idx].reset_index(drop=True))
+            start_idx = end_idx
+
+        pastel_colors = ["#dbeafe", "#e6f4ea", "#fff7e6", "#f3e5f5", "#e0f7fa"]
+
+        cols = st.columns(5)
+        for i, key in enumerate(weekday_keys):
+            with cols[i]:
+                # day header with pastel tint and dark text for clear separation
+                st.markdown(f'<div class="day-card" style="padding:8px;"><div class="day-header" style="background-color:{pastel_colors[i]};">{key} — {len(splits[i])} cases</div></div>', unsafe_allow_html=True)
+                if splits[i].empty:
+                    st.write("No cases assigned.")
+                else:
+                    for _, r in splits[i].iterrows():
+                        urgency_emoji = "🔴" if r["Urgency_Level"] == "High" else ("🟠" if r["Urgency_Level"] == "Medium" else "🟢")
+                        deadline_color = "#ef4444" if int(r.get("Deadline_Days_Left", 999)) < 10 else "#2563eb"
+                        level_class = r['Urgency_Level'].lower() if isinstance(r['Urgency_Level'], str) else ""
+                        header = f"{r.get('Case_ID','')} — {r.get('Case_Type','')}"
+                        with st.expander(f"{header} ({urgency_emoji} {r['Urgency_Level']})", expanded=False):
+                            st.markdown(f"""
+                            <div class="case-card {level_class}">
+                                <b>{r.get('Case_ID','')} — {r.get('Case_Type','')}</b><br>
+                                <div style='font-size:13px'>{r.get('Short_Description', r.get('Description',''))}</div>
+                                <div style='margin-top:8px;'>
+                                    <span style="background:{deadline_color};color:white;padding:4px 8px;border-radius:8px;margin-right:6px;">
+                                        📅 {r.get('Deadline_Days_Left','N/A')} days left
+                                    </span>
+                                    <span style="background:#6b21a8;color:white;padding:4px 8px;border-radius:8px;">
+                                        ⚖️ {r.get('Previous_Motions',0)} motions
+                                    </span>
+                                </div>
+                                <div class="progress-bar"><div class="progress-fill" style="width:{r['Urgency_Score']}%"></div></div>
+                                <div style='font-size:12px;opacity:0.8;margin-top:6px'>Urgency: {r['Urgency_Level']}</div>
+                            </div>
+                            """, unsafe_allow_html=True)
+
+        st.success("✅ Calendar simulation: cases evenly distributed across next 5 weekdays (Mon–Fri).")
+
+# -------------------- FOOTER --------------------
+st.markdown('<hr><p style="text-align:center; color:grey; font-size:12px;">© 2025 Case Dashboard | Built with Streamlit</p>', unsafe_allow_html=True)
