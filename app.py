@@ -288,15 +288,107 @@ if page == "Dashboard":
 
 # -------------------- CALENDAR VIEW --------------------
 elif page == "Calendar View":
-    st.markdown('<div class="title-gradient">📅 Case Calendar View</div>', unsafe_allow_html=True)
-    st.write("Smart scheduling (10 AM–4 PM, lunch 12:30–1:00, weekdays only).")
+    st.markdown('<div class="title-gradient">📅 Smart Case Calendar</div>', unsafe_allow_html=True)
+    st.write("AI-optimized scheduling — weekdays only, 10 AM–4 PM, with a 12:30–1:00 PM lunch break.")
+
+    # Custom enhanced CSS for Calendar View
+    st.markdown("""
+    <style>
+    /* Glass and neon glow aesthetics */
+    .calendar-container {
+        backdrop-filter: blur(20px) saturate(160%);
+        -webkit-backdrop-filter: blur(20px) saturate(160%);
+        background-color: rgba(17, 25, 40, 0.75);
+        border-radius: 24px;
+        padding: 28px;
+        box-shadow: 0 8px 30px rgba(0,0,0,0.45);
+        transition: all 0.3s ease;
+        margin-bottom: 30px;
+    }
+    .calendar-container:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 10px 35px rgba(147,51,234,0.35);
+    }
+    .day-header {
+        font-size: 20px;
+        font-weight: 700;
+        background: linear-gradient(90deg,#60a5fa,#a855f7,#ec4899);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin-bottom: 10px;
+        text-align: center;
+    }
+    .case-card {
+        background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 18px;
+        padding: 18px;
+        margin-top: 14px;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+    .case-card::before {
+        content: "";
+        position: absolute;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        background: linear-gradient(120deg, rgba(59,130,246,0.2), rgba(147,51,234,0.15), rgba(236,72,153,0.2));
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        z-index: 0;
+    }
+    .case-card:hover::before { opacity: 1; }
+    .case-card:hover { transform: translateY(-3px); box-shadow: 0 8px 22px rgba(99,102,241,0.3); }
+    .case-card-content { position: relative; z-index: 2; }
+    .high-border { border-left: 6px solid #f87171; }
+    .medium-border { border-left: 6px solid #fbbf24; }
+    .low-border { border-left: 6px solid #34d399; }
+    .progress-bar {
+        background-color: rgba(255,255,255,0.1);
+        height: 8px;
+        border-radius: 6px;
+        margin-top: 8px;
+        overflow: hidden;
+    }
+    .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, #3b82f6, #a855f7, #ec4899);
+        box-shadow: 0 0 6px rgba(168,85,247,0.5);
+        border-radius: 6px;
+    }
+    .case-meta span {
+        display: inline-block;
+        font-size: 13px;
+        margin-top: 6px;
+        background: rgba(255,255,255,0.08);
+        color: #e5e7eb;
+        padding: 4px 10px;
+        border-radius: 8px;
+        margin-right: 6px;
+    }
+    .case-meta span.deadline { background: #ef4444; color: white; }
+    .case-meta span.motion { background: #6b21a8; color: white; }
+    .urgency-tag {
+        font-size: 13px;
+        padding: 2px 8px;
+        border-radius: 6px;
+        font-weight: 600;
+        display: inline-block;
+    }
+    .urgency-high { background: rgba(248,113,113,0.25); color: #fca5a5; }
+    .urgency-medium { background: rgba(251,191,36,0.25); color: #fcd34d; }
+    .urgency-low { background: rgba(52,211,153,0.25); color: #6ee7b7; }
+    </style>
+    """, unsafe_allow_html=True)
 
     if df.empty:
-        st.warning("No cases available.")
+        st.warning("No cases available to schedule.")
     else:
         total_cases = len(df)
-        st.info(f"Total cases: {total_cases}")
+        st.info(f"Total cases to schedule: {total_cases}")
 
+        # Duration mapping by urgency
         duration_map = {"Low": 10, "Medium": 25, "High": 60}
 
         def next_weekday(date):
@@ -305,11 +397,12 @@ elif page == "Calendar View":
                 date += timedelta(days=1)
             return date
 
+        # Start scheduling at 10AM
         start_date = datetime.today()
         while start_date.weekday() >= 5:
             start_date += timedelta(days=1)
 
-        current_time = start_date.replace(hour=10, minute=0)
+        current_time = start_date.replace(hour=10, minute=0, second=0, microsecond=0)
         end_time = current_time.replace(hour=16, minute=0)
         lunch_start = current_time.replace(hour=12, minute=30)
         lunch_end = current_time.replace(hour=13, minute=0)
@@ -345,19 +438,47 @@ elif page == "Calendar View":
 
         schedule_df = pd.DataFrame(schedule)
         days = schedule_df["Date"].unique()
-        pastel_colors = ["#dbeafe","#e6f4ea","#fff7e6","#f3e5f5","#e0f7fa"]
+
+        # Dynamic gradient colors
+        pastel_colors = ["#1e293b", "#111827", "#0f172a", "#1e1b4b", "#2d1b69"]
 
         for i, day in enumerate(days):
             day_cases = schedule_df[schedule_df["Date"] == day]
-            color = pastel_colors[i % len(pastel_colors)]
-            st.markdown(f'<div class="day-card"><div class="day-header" style="background-color:{color};">{day} — {len(day_cases)} cases</div></div>', unsafe_allow_html=True)
+            st.markdown(
+                f"<div class='calendar-container'>"
+                f"<div class='day-header'>{day} — {len(day_cases)} cases</div>",
+                unsafe_allow_html=True
+            )
+
             for _, entry in day_cases.iterrows():
                 r = entry["Row"]
-                urgency_emoji = "🔴" if r["Urgency_Level"]=="High" else ("🟠" if r["Urgency_Level"]=="Medium" else "🟢")
-                deadline_color = "#ef4444" if int(r.get("Deadline_Days_Left",999))<10 else "#2563eb"
-                level_class = r['Urgency_Level'].lower()
+                urgency = r["Urgency_Level"]
+                urgency_class = urgency.lower()
+                urgency_emoji = "🔴" if urgency == "High" else ("🟠" if urgency == "Medium" else "🟢")
+                border_class = "high-border" if urgency == "High" else ("medium-border" if urgency == "Medium" else "low-border")
+                deadline_color = "#ef4444" if int(r.get("Deadline_Days_Left", 999)) < 10 else "#2563eb"
+
                 header = f"{r.get('Case_ID','')} — {r.get('Case_Type','')} ({entry['Start']}–{entry['End']})"
-                with st.expander(f"{header} ({urgency_emoji} {r['Urgency_Level']})", expanded=False):
+
+                with st.expander(f"{header} ({urgency_emoji} {urgency})", expanded=False):
                     st.markdown(f"""
-                    <div class="case-card {level_class}">
-                        <b>{r.get('Case_ID','')} — {r.get('Case_Type','
+                    <div class="case-card {border_class}">
+                        <div class="case-card-content">
+                            <b style="font-size:16px;">{r.get('Case_ID','')} — {r.get('Case_Type','')}</b><br>
+                            <div style="font-size:13px;opacity:0.85;margin-top:4px;">{r.get('Short_Description', r.get('Description',''))}</div>
+                            <div class="case-meta">
+                                <span class="deadline">📅 {r.get('Deadline_Days_Left','N/A')} days left</span>
+                                <span class="motion">⚖️ {r.get('Previous_Motions',0)} motions</span>
+                            </div>
+                            <div class="progress-bar"><div class="progress-fill" style="width:{r['Urgency_Score']}%"></div></div>
+                            <div style="font-size:12px;opacity:0.75;margin-top:6px;">
+                                Urgency: <span class="urgency-tag urgency-{urgency_class}">{urgency}</span>
+                                | Time: {entry['Start']} – {entry['End']}
+                            </div>
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
+
+            st.markdown("</div>", unsafe_allow_html=True)
+
+        st.success("✅ Smart scheduling complete with modernized UI and urgency highlights.")
