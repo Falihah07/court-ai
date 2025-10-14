@@ -480,4 +480,4 @@ elif page == "Calendar View":
 
             st.markdown("</div>", unsafe_allow_html=True)
 
-        st.success("✅ Smart scheduling complete with modernized UI and urgency highlights.")"
+        st.success("✅ Smart scheduling complete with modernized UI and urgency highlights.")
