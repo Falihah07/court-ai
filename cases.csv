@@ -1,4 +1,96 @@
-Case_ID,Case_Type,Pending_Days,Deadline_Days_Left,Previous_Motions
-C201,Bail,20,3,2
-C202,Custody,200,5,1
-C203,Fraud,180,15,3
+Case_ID,Case_Type,Pending_Days,Deadline_Days_Left,Previous_Motions,Short_Description
+C201,Bail,20,3,2,Bail petition urgent
+C202,Custody,200,5,1,Custody appeal pending
+C203,Fraud,180,15,3,Fraud investigation
+C204,Appeal,360,41,0,New motion filed
+C205,Contract,422,35,3,Contract dispute ongoing
+C206,Land Dispute,474,4,1,Title issue
+C207,Appeal,166,53,0,Appeal under review
+C208,Fraud,190,25,3,Urgent petition
+C209,Bail,127,19,1,Hearing pending
+C210,Contract,337,52,2,Title issue
+C211,Land Dispute,466,42,0,Hearing pending
+C212,Appeal,148,58,3,Contract dispute ongoing
+C213,Custody,283,33,2,Urgent petition
+C214,Bail,116,26,1,New motion filed
+C215,Contract,238,47,3,Contract dispute ongoing
+C216,Fraud,361,37,0,Appeal under review
+C217,Appeal,438,24,2,Title issue
+C218,Land Dispute,121,15,0,Contract dispute ongoing
+C219,Custody,332,30,1,Hearing pending
+C220,Bail,221,11,3,New motion filed
+C221,Appeal,443,48,0,Urgent petition
+C222,Contract,108,39,2,Contract dispute ongoing
+C223,Fraud,292,20,3,Appeal under review
+C224,Land Dispute,131,29,1,Title issue
+C225,Bail,471,13,0,Hearing pending
+C226,Custody,245,59,3,Urgent petition
+C227,Fraud,389,31,0,Contract dispute ongoing
+C228,Appeal,424,46,1,Title issue
+C229,Contract,153,9,2,Appeal under review
+C230,Land Dispute,496,14,1,New motion filed
+C231,Appeal,102,43,0,Hearing pending
+C232,Bail,371,28,2,Urgent petition
+C233,Custody,492,16,0,Contract dispute ongoing
+C234,Fraud,142,32,1,Appeal under review
+C235,Land Dispute,406,27,3,Hearing pending
+C236,Appeal,276,21,2,Title issue
+C237,Contract,317,18,1,New motion filed
+C238,Bail,337,10,0,Urgent petition
+C239,Custody,219,50,3,Contract dispute ongoing
+C240,Fraud,411,36,1,Hearing pending
+C241,Land Dispute,466,7,0,Appeal under review
+C242,Appeal,134,55,3,Title issue
+C243,Contract,488,12,2,New motion filed
+C244,Bail,310,34,1,Hearing pending
+C245,Fraud,160,22,0,Urgent petition
+C246,Custody,294,48,2,Contract dispute ongoing
+C247,Appeal,128,45,1,Appeal under review
+C248,Land Dispute,216,8,3,Title issue
+C249,Contract,351,23,0,Hearing pending
+C250,Bail,207,6,2,Urgent petition
+C251,Custody,390,56,1,New motion filed
+C252,Fraud,279,27,3,Contract dispute ongoing
+C253,Appeal,454,17,0,Appeal under review
+C254,Land Dispute,240,30,2,Title issue
+C255,Contract,383,29,1,Hearing pending
+C256,Bail,472,41,0,Urgent petition
+C257,Custody,113,5,2,Contract dispute ongoing
+C258,Fraud,318,25,3,Appeal under review
+C259,Appeal,258,40,1,Title issue
+C260,Land Dispute,338,15,0,New motion filed
+C261,Contract,450,9,2,Hearing pending
+C262,Bail,479,19,3,Urgent petition
+C263,Custody,305,49,1,Contract dispute ongoing
+C264,Fraud,495,26,0,Appeal under review
+C265,Appeal,350,28,3,Title issue
+C266,Land Dispute,177,12,2,Hearing pending
+C267,Contract,422,18,0,New motion filed
+C268,Bail,130,21,1,Urgent petition
+C269,Custody,213,42,3,Contract dispute ongoing
+C270,Fraud,370,11,2,Hearing pending
+C271,Appeal,183,43,0,Appeal under review
+C272,Land Dispute,497,24,1,Title issue
+C273,Contract,405,32,3,Urgent petition
+C274,Bail,204,13,0,Contract dispute ongoing
+C275,Custody,415,35,2,Appeal under review
+C276,Fraud,390,9,1,Hearing pending
+C277,Appeal,139,20,0,Title issue
+C278,Land Dispute,262,28,3,New motion filed
+C279,Contract,431,14,1,Urgent petition
+C280,Bail,184,6,2,Contract dispute ongoing
+C281,Custody,457,38,0,Hearing pending
+C282,Fraud,323,31,3,Appeal under review
+C283,Appeal,144,16,1,Title issue
+C284,Land Dispute,284,47,2,New motion filed
+C285,Contract,429,10,0,Contract dispute ongoing
+C286,Bail,301,22,3,Hearing pending
+C287,Custody,387,40,1,Urgent petition
+C288,Fraud,276,19,0,Appeal under review
+C289,Appeal,191,50,2,Title issue
+C290,Land Dispute,327,29,3,New motion filed
+...
+C697,Bail,451,41,3,Hearing pending
+C698,Custody,286,27,1,Urgent petition
+C699,Fraud,177,20,0,Appeal under review
+C700,Appeal,498,32,2,Contract dispute ongoing
