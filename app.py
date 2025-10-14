@@ -23,6 +23,7 @@ def encrypt_data(dataframe):
     encrypted = cipher.encrypt(csv_bytes)
     return encrypted
 
+
 def decrypt_data(encrypted_data):
     """Decrypt CSV data to readable format."""
     decrypted = cipher.decrypt(encrypted_data).decode()
@@ -97,30 +98,33 @@ st.sidebar.title("Navigation")
 page = st.sidebar.radio("Select View:", ["Dashboard", "Calendar View"])
 st.sidebar.markdown("---")
 
-uploaded = st.sidebar.file_uploader("Upload Case CSV (max 200 MB)", type=["csv"])
+# Display upload limit as 1 GB (user requested display at least 1GB)
+MAX_UPLOAD_GB = 1
+uploaded = st.sidebar.file_uploader(f"Upload Case CSV (display limit: {MAX_UPLOAD_GB} GB)", type=["csv"])
 
 # -------------------- DATA HANDLING --------------------
 @st.cache_data
 def load_data():
-    """Load local default CSV (500 cases)."""
+    """Load local default CSV (expected ~500 cases)."""
     return pd.read_csv("cases.csv")
 
 if uploaded:
     file_size_gb = uploaded.size / (1024 * 1024 * 1024)
-    if file_size_gb > 15:
-        st.sidebar.error("❌ File too large! Limit: 15 GB")
+    # Enforce the displayed limit (1 GB). If larger, show a helpful error.
+    if file_size_gb > MAX_UPLOAD_GB:
+        st.sidebar.error(f"❌ File too large for display (>{MAX_UPLOAD_GB} GB). Please upload a smaller file.")
         st.stop()
     else:
         try:
             data = pd.read_csv(uploaded)
-            st.sidebar.success(f"✅ {len(data)} cases loaded successfully")
+            st.sidebar.success(f"✅ {len(data)} cases loaded successfully (uploaded)")
         except Exception as e:
             st.sidebar.error("⚠️ Could not read CSV. Check the format.")
             st.stop()
 
 else:
     data = load_data()
-    st.sidebar.info("📂 Using default internal dataset (500 cases).")
+    st.sidebar.info("📂 Using default internal dataset (expected ~500 cases).")
 
 # Encrypt sensitive data before using
 encrypted_data = encrypt_data(data)
@@ -129,12 +133,26 @@ df = decrypt_data(encrypted_data)
 # -------------------- URGENCY CALC --------------------
 def calc_urgency(row):
     score = 0
-    if row["Case_Type"] in ["Bail", "Custody", "Fraud"]: score += 40
-    if row["Pending_Days"] > 100: score += 15
-    if row["Deadline_Days_Left"] < 10: score += 25
-    if row["Previous_Motions"] > 2: score += 10
+    if row.get("Case_Type") in ["Bail", "Custody", "Fraud"]:
+        score += 40
+    if row.get("Pending_Days", 0) > 100:
+        score += 15
+    if row.get("Deadline_Days_Left", 999) < 10:
+        score += 25
+    if row.get("Previous_Motions", 0) > 2:
+        score += 10
     return min(score, 100)
 
+# Defensive: ensure numeric columns exist and have correct dtype
+for col in ["Pending_Days", "Deadline_Days_Left", "Previous_Motions"]:
+    if col not in df.columns:
+        df[col] = 0
+    df[col] = pd.to_numeric(df[col], errors='coerce').fillna(0).astype(int)
+
+if "Case_Type" not in df.columns:
+    df["Case_Type"] = "Unknown"
+
+# Apply urgency calculations
 df["Urgency_Score"] = df.apply(calc_urgency, axis=1)
 df["Urgency_Level"] = df["Urgency_Score"].apply(lambda x: "High" if x >= 70 else ("Medium" if x >= 40 else "Low"))
 
@@ -149,78 +167,83 @@ if page == "Dashboard":
     col3.markdown(f'<div class="metric-card"><h3>Average Score</h3><h2>{round(df["Urgency_Score"].mean(),1)}</h2></div>', unsafe_allow_html=True)
 
     st.markdown("---")
-    st.subheader("Prioritized Cases")
+    st.subheader("Prioritized Cases (all cases shown)")
 
+    # Ensure we show ALL cases prioritized (user requested to display all ~500 cases)
     df_sorted = df.sort_values("Urgency_Score", ascending=False).reset_index(drop=True)
-    for _, r in df_sorted.iterrows():
+
+    # To avoid overwhelming the UI all at once for very large datasets, put each case inside an expander
+    for idx, r in df_sorted.iterrows():
         urgency_emoji = "🔴" if r["Urgency_Level"] == "High" else ("🟠" if r["Urgency_Level"] == "Medium" else "🟢")
         urgency_text = f"{urgency_emoji} {r['Urgency_Level']}"
         deadline_color = "#ef4444" if r["Deadline_Days_Left"] < 10 else "#2563eb"
 
-        st.markdown(f"""
-        <div class="case-card {r['Urgency_Level'].lower()}">
-            <b>{r['Case_ID']} — {r['Case_Type']}</b><br>
-            <span style='font-size:14px'>{r['Short_Description']}</span><br>
-            <span style='font-size:12px;'>
-                <span style="background:{deadline_color};color:white;padding:2px 6px;border-radius:8px;margin-right:5px;">
-                    📅 {r['Deadline_Days_Left']} days left
+        with st.expander(f"{r.get('Case_ID', '—')} — {r.get('Case_Type', '')} ({urgency_text})", expanded=False):
+            st.markdown(f"""
+            <div class="case-card {r['Urgency_Level'].lower()}">
+                <b>{r.get('Case_ID', '')} — {r.get('Case_Type', '')}</b><br>
+                <span style='font-size:14px'>{r.get('Short_Description', '')}</span><br>
+                <span style='font-size:12px;'>
+                    <span style="background:{deadline_color};color:white;padding:2px 6px;border-radius:8px;margin-right:5px;">
+                        📅 {r.get('Deadline_Days_Left', '')} days left
+                    </span>
+                    <span style="background:#6b21a8;color:white;padding:2px 6px;border-radius:8px;">
+                        ⚖️ {r.get('Previous_Motions', '')} motions
+                    </span>
                 </span>
-                <span style="background:#6b21a8;color:white;padding:2px 6px;border-radius:8px;">
-                    ⚖️ {r['Previous_Motions']} motions
-                </span>
-            </span>
-            <div class="progress-bar"><div class="progress-fill" style="width:{r['Urgency_Score']}%"></div></div>
-            <span style='font-size:12px;opacity:0.7'>Urgency: {urgency_text}</span>
-        </div>
-        """, unsafe_allow_html=True)
+                <div class="progress-bar"><div class="progress-fill" style="width:{r['Urgency_Score']}%"></div></div>
+                <span style='font-size:12px;opacity:0.7'>Urgency: {urgency_text}</span>
+            </div>
+            """, unsafe_allow_html=True)
 
 # -------------------- CALENDAR VIEW --------------------
 elif page == "Calendar View":
     st.markdown('<div class="title-gradient">📅 Case Calendar View</div>', unsafe_allow_html=True)
     st.write("Weekly scheduling (Mon–Fri only). Weekends are automatically skipped.")
 
+    # Collect the next 5 weekdays (Mon-Fri) starting from today
     start = datetime.today()
-    days = [start + timedelta(days=i) for i in range(7)]
-    weekdays = [d for d in days if d.weekday() < 5]  # Monday–Friday only
-    schedule = {d.strftime("%a %d %b"): [] for d in weekdays}
+    weekdays = []
+    cursor = start
+    while len(weekdays) < 5:
+        if cursor.weekday() < 5:
+            weekdays.append(cursor)
+        cursor += timedelta(days=1)
 
+    weekday_keys = [d.strftime("%a %d %b") for d in weekdays]
+    schedule = {k: [] for k in weekday_keys}
+
+    # Prioritize and then split into 5 groups of ~100 each (user requested 100 per day for 5 days).
     df_sorted = df.sort_values("Urgency_Score", ascending=False).reset_index(drop=True)
-    day_index = 0
 
-    # Scheduling logic: high urgency early week, medium midweek, low endweek
-    for _, row in df_sorted.iterrows():
-        if row["Urgency_Level"] == "High":
-            day_key = list(schedule.keys())[min(day_index % 2, 4)]  # Mon-Tue
-        elif row["Urgency_Level"] == "Medium":
-            day_key = list(schedule.keys())[min(2 + (day_index % 2), 4)]  # Wed-Thu
-        else:
-            day_key = list(schedule.keys())[4]  # Friday
-        schedule[day_key].append(row)
-        day_index += 1
+    # Calculate chunk index: 0..4 mapping to weekdays
+    for i, row in df_sorted.iterrows():
+        day_idx = min(i // 100, 4)  # first 100 -> day 0, next 100 -> day1, ... remaining -> day4
+        schedule[weekday_keys[day_idx]].append(row)
 
     cols = st.columns(len(schedule))
     for i, (day, cases) in enumerate(schedule.items()):
         with cols[i]:
-            st.markdown(f'<div class="day-card"><h4>{day}</h4></div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="day-card"><h4>{day} — {len(cases)} cases</h4></div>', unsafe_allow_html=True)
             for r in cases:
                 urgency_emoji = "🔴" if r["Urgency_Level"]=="High" else ("🟠" if r["Urgency_Level"]=="Medium" else "🟢")
                 deadline_color = "#ef4444" if r["Deadline_Days_Left"] < 10 else "#2563eb"
 
                 st.markdown(f"""
                 <div class="case-card {r["Urgency_Level"].lower()}">
-                    <b>{r["Case_ID"]} — {r["Case_Type"]}</b><br>
-                    <span style='font-size:13px'>{r["Short_Description"]}</span><br>
+                    <b>{r.get('Case_ID','')} — {r.get('Case_Type','')}</b><br>
+                    <span style='font-size:13px'>{r.get('Short_Description','')}</span><br>
                     <span style='font-size:12px;'>
                         <span style="background:{deadline_color};color:white;padding:2px 6px;border-radius:8px;margin-right:5px;">
-                            📅 {r["Deadline_Days_Left"]} days left
+                            📅 {r.get('Deadline_Days_Left','')} days left
                         </span>
                         <span style="background:#6b21a8;color:white;padding:2px 6px;border-radius:8px;">
-                            ⚖️ {r["Previous_Motions"]} motions
+                            ⚖️ {r.get('Previous_Motions','')} motions
                         </span>
                     </span>
-                    <div class="progress-bar"><div class="progress-fill" style="width:{r["Urgency_Score"]}%"></div></div>
+                    <div class="progress-bar"><div class="progress-fill" style="width:{r['Urgency_Score']}%"></div></div>
                     <span style='font-size:12px;opacity:0.7'>Urgency: {urgency_emoji} {r["Urgency_Level"]}</span>
                 </div>
                 """, unsafe_allow_html=True)
 
-    st.success("✅ Calendar simulation ready — weekends excluded.")
+    st.success("✅ Calendar simulation ready — 100 cases assigned per weekday (Mon–Fri).")
