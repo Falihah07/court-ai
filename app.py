@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 from cryptography.fernet import Fernet
 import math
 
-# -------------------- PAGE SETUP --------------------
+# -------------------- PAGE SETUP -------------------
 st.set_page_config(
     page_title="AI-Powered Justice System",
     layout="wide"
@@ -28,73 +28,161 @@ def decrypt_data(encrypted_data):
 
 # -------------------- CUSTOM CSS (restore original look) --------------------
 st.markdown("""
+st.markdown("""
 <style>
-body, .stApp, .stSidebar { font-family: 'Segoe UI', sans-serif; color: #fff; }
+/* ---------- Global Font & Background ---------- */
+body, .stApp, .stSidebar {
+    font-family: 'Segoe UI', sans-serif;
+    color: #f3f4f6;
+    background: radial-gradient(circle at top left, #0f172a 0%, #111827 100%);
+}
+
+/* ---------- Title Gradient ---------- */
 .title-gradient {
-    background: linear-gradient(90deg, #2563eb, #6b21a8);
+    background: linear-gradient(90deg, #60a5fa, #c084fc, #ec4899);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
-    font-size: 40px;
-    font-weight: 700;
+    font-size: 42px;
+    font-weight: 800;
+    text-shadow: 0 2px 8px rgba(99,102,241,0.5);
 }
-.subtitle { font-size: 18px; color: #9ca3af; margin-bottom: 20px; }
 
+/* ---------- Subtitle ---------- */
+.subtitle {
+    font-size: 18px;
+    color: #9ca3af;
+    margin-bottom: 22px;
+    letter-spacing: 0.3px;
+}
+
+/* ---------- Metric Cards ---------- */
 .metric-card {
-    background-color: #111827;
-    border-radius: 15px;
+    background: linear-gradient(145deg, #1f2937, #0f172a);
+    border-radius: 18px;
     padding: 28px;
     text-align: center;
-    box-shadow: 0 6px 16px rgba(0,0,0,0.6);
-    transition: transform 0.2s;
+    box-shadow: 0 8px 22px rgba(0,0,0,0.55);
+    transition: all 0.25s ease-in-out;
 }
-.metric-card h3 { color: #e5e7eb; font-weight: 600; margin-bottom: 8px; }
-.metric-card h2 { color: #fff; font-size: 34px; margin: 0; }
+.metric-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 28px rgba(59,130,246,0.25);
+}
+.metric-card h3 { color: #a5b4fc; font-weight: 600; margin-bottom: 8px; }
+.metric-card h2 { color: #fff; font-size: 36px; margin: 0; text-shadow: 0 2px 8px rgba(255,255,255,0.2); }
 
+/* ---------- Case Cards ---------- */
 .case-card {
     padding: 18px;
     margin-bottom: 18px;
-    border-radius: 12px;
-    box-shadow: 0px 6px 18px rgba(0,0,0,0.6);
+    border-radius: 14px;
+    background: rgba(17,24,39,0.95);
+    box-shadow: 0 4px 14px rgba(0,0,0,0.6);
     border-left: 6px solid;
-    background-color: #0f1724;
-    transition: transform 0.15s, box-shadow 0.15s;
+    transition: all 0.2s ease;
+    position: relative;
 }
 .case-card:hover {
     transform: translateY(-2px);
-    box-shadow: 0px 10px 22px rgba(0,0,0,0.7);
+    box-shadow: 0px 8px 20px rgba(99,102,241,0.3);
+}
+.case-card::before {
+    content: "";
+    position: absolute;
+    left: -6px;
+    top: 0;
+    height: 100%;
+    width: 6px;
+    border-radius: 6px 0 0 6px;
+}
+.high::before { background: linear-gradient(180deg,#f87171,#ef4444); }
+.medium::before { background: linear-gradient(180deg,#fbbf24,#f59e0b); }
+.low::before { background: linear-gradient(180deg,#34d399,#10b981); }
+
+.progress-bar {
+    height: 8px;
+    border-radius: 6px;
+    background-color: #1f2937;
+    margin-top: 12px;
+    margin-bottom: 6px;
+    overflow: hidden;
+}
+.progress-fill {
+    height: 8px;
+    border-radius: 6px;
+    background: linear-gradient(90deg, #3b82f6, #a855f7, #ec4899);
+    box-shadow: 0 0 6px rgba(168,85,247,0.4);
 }
 
-.high {border-left-color:#ef4444;}
-.medium {border-left-color:#f59e0b;}
-.low {border-left-color:#10b981;}
-
-.progress-bar { height: 8px; border-radius: 6px; background-color: #1f2937; margin-top: 12px; margin-bottom: 6px; }
-.progress-fill { height: 8px; border-radius: 6px; background: linear-gradient(90deg, #2563eb, #6b21a8); }
-
+/* ---------- Day Cards ---------- */
 .day-card {
-    border-radius: 12px;
+    border-radius: 14px;
     padding: 12px;
-    margin-bottom: 12px;
-    background-color: rgba(255,255,255,0.03);
-    box-shadow: 0px 4px 10px rgba(0,0,0,0.6);
-    transition: transform 0.12s;
+    margin-bottom: 18px;
+    background: linear-gradient(145deg, rgba(31,41,55,0.9), rgba(17,24,39,0.9));
+    box-shadow: 0px 4px 12px rgba(0,0,0,0.5);
+    transition: all 0.2s ease;
 }
+.day-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 18px rgba(99,102,241,0.25);
+}
+
 .day-header {
-    padding: 10px;
+    padding: 10px 12px;
     border-radius: 10px;
-    color: #0f1724;
     font-weight: 700;
+    font-size: 15px;
+    color: #0f1724;
+    background: linear-gradient(90deg,#bfdbfe,#ddd6fe,#fce7f3);
+    text-align: center;
+    box-shadow: inset 0 0 8px rgba(255,255,255,0.4);
 }
 
-.expander .streamlit-expanderHeader { color: #e5e7eb !important; }
+/* ---------- Expanders ---------- */
+.expander .streamlit-expanderHeader {
+    color: #e5e7eb !important;
+    font-weight: 600 !important;
+}
 
-.stSidebar .css-1d391kg { color: #d1d5db; }  /* sidebar text */
-.stButton>button { background-color: #111827; color: #fff; }
+/* ---------- Sidebar ---------- */
+.stSidebar {
+    background: linear-gradient(180deg, #111827, #0f172a);
+    color: #d1d5db;
+}
+.stSidebar .css-1d391kg { color: #d1d5db; }
 
+/* ---------- Buttons ---------- */
+.stButton>button {
+    background: linear-gradient(90deg,#2563eb,#6b21a8);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    padding: 8px 20px;
+    font-weight: 600;
+    transition: all 0.25s ease;
+}
+.stButton>button:hover {
+    transform: scale(1.04);
+    box-shadow: 0 0 10px rgba(147,51,234,0.4);
+}
+
+/* ---------- Light Mode Adjustments ---------- */
 @media (prefers-color-scheme: light) {
-    body, .stApp, .stSidebar { color: #111827; }
-    .metric-card, .case-card, .day-card { background-color: #ffffff !important; color: #111827 !important; box-shadow: 0px 4px 12px rgba(0,0,0,0.08); }
-    .progress-bar { background-color: #e6e7eb; }
+    body, .stApp, .stSidebar {
+        color: #111827;
+        background: linear-gradient(180deg,#f9fafb,#f3f4f6);
+    }
+    .metric-card, .case-card, .day-card {
+        background-color: #ffffff !important;
+        color: #111827 !important;
+        box-shadow: 0px 4px 12px rgba(0,0,0,0.1);
+    }
+    .day-header {
+        color: #111827;
+        background: linear-gradient(90deg,#bfdbfe,#ddd6fe,#fce7f3);
+    }
+    .progress-bar { background-color: #e5e7eb; }
 }
 </style>
 """, unsafe_allow_html=True)
