@@ -106,9 +106,9 @@ def load_data():
     return pd.read_csv("cases.csv")
 
 if uploaded:
-    file_size_mb = uploaded.size / (1024 * 1024)
-    if file_size_mb > 200:
-        st.sidebar.error("❌ File too large! Limit: 200 MB")
+    file_size_gb = uploaded.size / (1024 * 1024 * 1024)
+    if file_size_gb > 15:
+        st.sidebar.error("❌ File too large! Limit: 15 GB")
         st.stop()
     else:
         try:
@@ -117,6 +117,7 @@ if uploaded:
         except Exception as e:
             st.sidebar.error("⚠️ Could not read CSV. Check the format.")
             st.stop()
+
 else:
     data = load_data()
     st.sidebar.info("📂 Using default internal dataset (500 cases).")
