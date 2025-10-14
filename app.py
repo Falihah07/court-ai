@@ -41,9 +41,24 @@ if page == "Dashboard":
                 "low": "#ccffcc"
             }.get(urgency, "#e6e6fa")
 
-            with st.expander(f"{row.get('Case Number', 'N/A')} | {row.get('Case Type', 'Unknown')}"):
-                st.markdown(f'<div style="background-color:{color}; padding:5px; border-radius:5px;">Urgency: {row.get("Urgency", "N/A")} </div>', unsafe_allow_html=True)
-                st.write(row.to_dict())
+            header = f"{row.get('Case_ID', 'N/A')} | {row.get('Case_Type', 'Unknown')}"
+
+            with st.expander(header):
+                st.markdown(f'<div style="background-color:{color}; padding:5px; border-radius:5px;">Urgency: {row.get('Urgency', 'N/A')} </div>', unsafe_allow_html=True)
+                st.write({
+                    'Case Name': row.get('Case_Name', 'N/A'),
+                    'Court': row.get('Court', 'N/A'),
+                    'Judge': row.get('Judge', 'N/A'),
+                    'Status': row.get('Status', 'N/A'),
+                    'Urgency': row.get('Urgency', 'N/A'),
+                    'Date Filed': row.get('Date_Filed', 'N/A'),
+                    'Petitioner': row.get('Petitioner', 'N/A'),
+                    'Respondent': row.get('Respondent', 'N/A'),
+                    'Lawyer': row.get('Lawyer', 'N/A'),
+                    'Hearing Date': row.get('Hearing_Date', 'N/A'),
+                    'Verdict Date': row.get('Verdict_Date', 'N/A'),
+                    'Description': row.get('Description', 'N/A')
+                })
     else:
         st.warning("No cases found in cases.csv.")
 
@@ -85,9 +100,24 @@ elif page == "Calendar View":
                         "low": "#ccffcc"
                     }.get(urgency, "#e6e6fa")
 
-                    with st.expander(f"{row.get('Case Number', 'N/A')} | {row.get('Case Type', 'Unknown')}"):
-                        st.markdown(f'<div style="background-color:{color}; padding:5px; border-radius:5px;">Urgency: {row.get("Urgency", "N/A")} </div>', unsafe_allow_html=True)
-                        st.write(row.to_dict())
+                    header = f"{row.get('Case_ID', 'N/A')} | {row.get('Case_Type', 'Unknown')}"
+
+                    with st.expander(header):
+                        st.markdown(f'<div style="background-color:{color}; padding:5px; border-radius:5px;">Urgency: {row.get('Urgency', 'N/A')} </div>', unsafe_allow_html=True)
+                        st.write({
+                            'Case Name': row.get('Case_Name', 'N/A'),
+                            'Court': row.get('Court', 'N/A'),
+                            'Judge': row.get('Judge', 'N/A'),
+                            'Status': row.get('Status', 'N/A'),
+                            'Urgency': row.get('Urgency', 'N/A'),
+                            'Date Filed': row.get('Date_Filed', 'N/A'),
+                            'Petitioner': row.get('Petitioner', 'N/A'),
+                            'Respondent': row.get('Respondent', 'N/A'),
+                            'Lawyer': row.get('Lawyer', 'N/A'),
+                            'Hearing Date': row.get('Hearing_Date', 'N/A'),
+                            'Verdict Date': row.get('Verdict_Date', 'N/A'),
+                            'Description': row.get('Description', 'N/A')
+                        })
     else:
         st.warning("No data to display in Calendar View.")
 
