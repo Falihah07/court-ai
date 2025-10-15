@@ -292,94 +292,185 @@ elif page == "Calendar View":
 
     # Custom enhanced CSS for Calendar View
     st.markdown("""
-    <style>
-    /* Glass and neon glow aesthetics */
-    .calendar-container {
-        backdrop-filter: blur(20px) saturate(160%);
-        -webkit-backdrop-filter: blur(20px) saturate(160%);
-        background-color: rgba(17, 25, 40, 0.75);
-        border-radius: 24px;
-        padding: 28px;
-        box-shadow: 0 8px 30px rgba(0,0,0,0.45);
-        transition: all 0.3s ease;
-        margin-bottom: 30px;
+   st.markdown("""
+<style>
+/* 🌌 Global layout */
+body, .stApp, .stSidebar {
+    font-family: 'Poppins', 'Segoe UI', sans-serif;
+    color: #f3f4f6;
+    background: radial-gradient(circle at 20% 20%, #0f172a 0%, #111827 60%, #0a0f1f 100%);
+    animation: bgShift 12s ease-in-out infinite alternate;
+}
+@keyframes bgShift {
+    0% { background-position: 0% 50%; }
+    100% { background-position: 100% 50%; }
+}
+
+/* ⚖️ Title and subtitle */
+.title-gradient {
+    background: linear-gradient(270deg, #60a5fa, #c084fc, #ec4899, #8b5cf6);
+    background-size: 600% 600%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-size: 44px;
+    font-weight: 900;
+    animation: gradientShift 6s ease infinite;
+    text-shadow: 0 3px 8px rgba(147,51,234,0.4);
+}
+@keyframes gradientShift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+.subtitle {
+    font-size: 18px;
+    color: #a1a1aa;
+    margin-bottom: 25px;
+    letter-spacing: 0.4px;
+}
+
+/* 📊 Metric cards */
+.metric-card {
+    background: rgba(17,24,39,0.75);
+    border-radius: 18px;
+    padding: 28px;
+    text-align: center;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+    backdrop-filter: blur(18px);
+    border: 1px solid rgba(255,255,255,0.1);
+    transition: all 0.3s ease;
+}
+.metric-card:hover {
+    transform: translateY(-6px) scale(1.03);
+    box-shadow: 0 0 20px rgba(168,85,247,0.4);
+}
+.metric-card h3 {
+    color: #a5b4fc;
+    font-weight: 600;
+    margin-bottom: 6px;
+}
+.metric-card h2 {
+    color: #fff;
+    font-size: 38px;
+    margin: 0;
+    text-shadow: 0 2px 12px rgba(255,255,255,0.2);
+}
+
+/* 📁 Case Cards */
+.case-card {
+    background: rgba(17,24,39,0.7);
+    border-radius: 16px;
+    padding: 18px;
+    margin-bottom: 18px;
+    border-left: 6px solid;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    backdrop-filter: blur(10px);
+}
+.case-card:hover {
+    transform: translateY(-3px) scale(1.01);
+    box-shadow: 0 0 25px rgba(147,51,234,0.4);
+}
+.case-card::after {
+    content: "";
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    opacity: 0;
+    background: linear-gradient(120deg, rgba(147,51,234,0.1), rgba(236,72,153,0.1));
+    transition: opacity 0.3s ease;
+}
+.case-card:hover::after { opacity: 1; }
+
+/* Urgency border colors */
+.high { border-left-color: #f87171; }
+.medium { border-left-color: #fbbf24; }
+.low { border-left-color: #34d399; }
+
+/* 🕒 Progress bar */
+.progress-bar {
+    height: 8px;
+    border-radius: 5px;
+    background: rgba(255,255,255,0.08);
+    margin-top: 10px;
+    overflow: hidden;
+}
+.progress-fill {
+    height: 100%;
+    border-radius: 5px;
+    background: linear-gradient(90deg, #60a5fa, #a855f7, #ec4899);
+    background-size: 200% 200%;
+    animation: barFlow 3s linear infinite;
+}
+@keyframes barFlow {
+    0% { background-position: 0% 50%; }
+    100% { background-position: 100% 50%; }
+}
+
+/* 📅 Calendar cards */
+.day-card {
+    border-radius: 16px;
+    padding: 14px;
+    margin-bottom: 18px;
+    background: linear-gradient(145deg, rgba(31,41,55,0.85), rgba(17,24,39,0.85));
+    box-shadow: 0px 8px 20px rgba(0,0,0,0.5);
+    transition: all 0.25s ease;
+}
+.day-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 25px rgba(59,130,246,0.4);
+}
+
+/* Sidebar aesthetics */
+.stSidebar {
+    backdrop-filter: blur(18px);
+    background: linear-gradient(180deg, rgba(15,23,42,0.9), rgba(30,41,59,0.95));
+    border-right: 1px solid rgba(255,255,255,0.08);
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+    width: 10px;
+}
+::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, #6366f1, #a855f7, #ec4899);
+    border-radius: 8px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, #818cf8, #c084fc, #f472b6);
+}
+
+/* Buttons */
+.stButton>button {
+    background: linear-gradient(90deg,#2563eb,#6b21a8);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    padding: 10px 22px;
+    font-weight: 600;
+    transition: all 0.25s ease;
+}
+.stButton>button:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 14px rgba(147,51,234,0.45);
+}
+
+/* Light mode fallback */
+@media (prefers-color-scheme: light) {
+    body, .stApp, .stSidebar {
+        background: linear-gradient(180deg, #f9fafb, #f3f4f6);
+        color: #111827;
     }
-    .calendar-container:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 10px 35px rgba(147,51,234,0.35);
+    .metric-card, .case-card, .day-card {
+        background-color: #ffffff !important;
+        color: #111827 !important;
+        box-shadow: 0px 4px 12px rgba(0,0,0,0.1);
     }
-    .day-header {
-        font-size: 20px;
-        font-weight: 700;
-        background: linear-gradient(90deg,#60a5fa,#a855f7,#ec4899);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        margin-bottom: 10px;
-        text-align: center;
-    }
-    .case-card {
-        background: rgba(255,255,255,0.05);
-        border: 1px solid rgba(255,255,255,0.1);
-        border-radius: 18px;
-        padding: 18px;
-        margin-top: 14px;
-        transition: all 0.3s ease;
-        position: relative;
-        overflow: hidden;
-    }
-    .case-card::before {
-        content: "";
-        position: absolute;
-        top: 0; left: 0;
-        width: 100%; height: 100%;
-        background: linear-gradient(120deg, rgba(59,130,246,0.2), rgba(147,51,234,0.15), rgba(236,72,153,0.2));
-        opacity: 0;
-        transition: opacity 0.3s ease;
-        z-index: 0;
-    }
-    .case-card:hover::before { opacity: 1; }
-    .case-card:hover { transform: translateY(-3px); box-shadow: 0 8px 22px rgba(99,102,241,0.3); }
-    .case-card-content { position: relative; z-index: 2; }
-    .high-border { border-left: 6px solid #f87171; }
-    .medium-border { border-left: 6px solid #fbbf24; }
-    .low-border { border-left: 6px solid #34d399; }
-    .progress-bar {
-        background-color: rgba(255,255,255,0.1);
-        height: 8px;
-        border-radius: 6px;
-        margin-top: 8px;
-        overflow: hidden;
-    }
-    .progress-fill {
-        height: 100%;
-        background: linear-gradient(90deg, #3b82f6, #a855f7, #ec4899);
-        box-shadow: 0 0 6px rgba(168,85,247,0.5);
-        border-radius: 6px;
-    }
-    .case-meta span {
-        display: inline-block;
-        font-size: 13px;
-        margin-top: 6px;
-        background: rgba(255,255,255,0.08);
-        color: #e5e7eb;
-        padding: 4px 10px;
-        border-radius: 8px;
-        margin-right: 6px;
-    }
-    .case-meta span.deadline { background: #ef4444; color: white; }
-    .case-meta span.motion { background: #6b21a8; color: white; }
-    .urgency-tag {
-        font-size: 13px;
-        padding: 2px 8px;
-        border-radius: 6px;
-        font-weight: 600;
-        display: inline-block;
-    }
-    .urgency-high { background: rgba(248,113,113,0.25); color: #fca5a5; }
-    .urgency-medium { background: rgba(251,191,36,0.25); color: #fcd34d; }
-    .urgency-low { background: rgba(52,211,153,0.25); color: #6ee7b7; }
-    </style>
-    """, unsafe_allow_html=True)
+}
+</style>
+""", unsafe_allow_html=True)
 
     if df.empty:
         st.warning("No cases available to schedule.")
