@@ -292,9 +292,9 @@ elif page == "Calendar View":
 
     # Custom enhanced CSS for Calendar View
     st.markdown("""
-   st.markdown("""
+ st.markdown("""
 <style>
-/* 🌌 Global layout */
+/* ===== GLOBAL LAYOUT ===== */
 body, .stApp, .stSidebar {
     font-family: 'Poppins', 'Segoe UI', sans-serif;
     color: #f3f4f6;
@@ -306,7 +306,7 @@ body, .stApp, .stSidebar {
     100% { background-position: 100% 50%; }
 }
 
-/* ⚖️ Title and subtitle */
+/* ===== TITLE & SUBTITLE ===== */
 .title-gradient {
     background: linear-gradient(270deg, #60a5fa, #c084fc, #ec4899, #8b5cf6);
     background-size: 600% 600%;
@@ -329,7 +329,7 @@ body, .stApp, .stSidebar {
     letter-spacing: 0.4px;
 }
 
-/* 📊 Metric cards */
+/* ===== METRIC CARDS ===== */
 .metric-card {
     background: rgba(17,24,39,0.75);
     border-radius: 18px;
@@ -356,7 +356,7 @@ body, .stApp, .stSidebar {
     text-shadow: 0 2px 12px rgba(255,255,255,0.2);
 }
 
-/* 📁 Case Cards */
+/* ===== CASE CARDS ===== */
 .case-card {
     background: rgba(17,24,39,0.7);
     border-radius: 16px;
@@ -389,7 +389,7 @@ body, .stApp, .stSidebar {
 .medium { border-left-color: #fbbf24; }
 .low { border-left-color: #34d399; }
 
-/* 🕒 Progress bar */
+/* ===== PROGRESS BAR ===== */
 .progress-bar {
     height: 8px;
     border-radius: 5px;
@@ -409,7 +409,7 @@ body, .stApp, .stSidebar {
     100% { background-position: 100% 50%; }
 }
 
-/* 📅 Calendar cards */
+/* ===== CALENDAR CARDS ===== */
 .day-card {
     border-radius: 16px;
     padding: 14px;
@@ -423,14 +423,14 @@ body, .stApp, .stSidebar {
     box-shadow: 0 0 25px rgba(59,130,246,0.4);
 }
 
-/* Sidebar aesthetics */
+/* Sidebar */
 .stSidebar {
     backdrop-filter: blur(18px);
     background: linear-gradient(180deg, rgba(15,23,42,0.9), rgba(30,41,59,0.95));
     border-right: 1px solid rgba(255,255,255,0.08);
 }
 
-/* Custom scrollbar */
+/* Scrollbar */
 ::-webkit-scrollbar {
     width: 10px;
 }
