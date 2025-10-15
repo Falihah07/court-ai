@@ -1,3 +1,4 @@
+# app.py — AI-Powered Justice System (Enhanced UI + Smart Scheduling)
 import streamlit as st
 import pandas as pd
 import numpy as np
